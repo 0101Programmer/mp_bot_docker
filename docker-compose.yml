@@ -5,11 +5,18 @@ services:
     image: mariadb:10.6
     container_name: bot_db
     restart: always
-    environment:
-      MARIADB_ROOT_PASSWORD: root_password
-      MARIADB_DATABASE: parliament_bot
-      MARIADB_USER: dbuser
-      MARIADB_PASSWORD: dbpassword
+
+    # Вместо ручного environment используем .env
+    env_file:
+      - .env
+    
+    # Если хотите явно прописать, что именно читается, можете:
+    # environment:
+    #   MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    #   MARIADB_DATABASE: ${DB_NAME}
+    #   MARIADB_USER: ${DB_USER}
+    #   MARIADB_PASSWORD: ${DB_PASSWORD}
+
     volumes:
       - db_data:/var/lib/mysql
 
@@ -19,26 +26,14 @@ services:
     restart: always
     depends_on:
       - db
-    environment:
-      # Передаём переменные окружения (если нужно), чтобы в settings.py подставить
-      DB_HOST: db
-      DB_NAME: parliament_bot
-      DB_USER: dbuser
-      DB_PASSWORD: dbpassword
 
-      # Токен бота, ID админа, и т.п.
-      TELEGRAM_API_TOKEN: "ВАШ_ТОКЕН"  # В реале лучше в .env
-      ADMIN_USER_ID: "123456789"
+    # Тоже считываем .env
+    env_file:
+      - .env
 
-    # Если хотим отлаживаться (монтировать код)
     volumes:
       - .:/app
 
-    # Бот не требует внешнего порта, так как общается с Telegram
-    # Но если вам нужен Django-admin по адресу http://localhost:8000/admin,
-    # смените команду на "runserver 0.0.0.0:8000".
-    # Или оставим как есть — бот не слушает порт, всё работает через Telegram API.
-    # command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]  # Для веб-интерфейса
     command: ["python", "manage.py", "runbot"]
 
 volumes:

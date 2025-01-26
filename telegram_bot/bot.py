@@ -5,15 +5,15 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.utils import executor
 from django.conf import settings
 
 # Импорт Django-моделей
 from .models import User as UserModel, Appeal, CommissionInfo, Notification
 
-API_TOKEN = 'ВАШ_TELEGRAM_API_TOKEN'
+API_TOKEN = settings.TELEGRAM_API_TOKEN
+
 FILE_DIR = 'uploads/'
-ADMIN_USER_ID = '12345678'  # Укажите Telegram ID администратора
+  # Укажите Telegram ID администратора
 
 bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()

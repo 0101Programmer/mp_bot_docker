@@ -86,6 +86,9 @@ DATABASES = {
     }
 }
 
+TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
+ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '0')
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 

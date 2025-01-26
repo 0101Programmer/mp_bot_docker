@@ -20,7 +20,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . /app
 
 # Указываем переменные окружения (в т.ч. DJANGO_SETTINGS_MODULE, если нужно)
-ENV DJANGO_SETTINGS_MODULE=myproject.settings
+ENV DJANGO_SETTINGS_MODULE=mp_bot.settings
 
 # По умолчанию — запуск бота
 CMD ["python", "manage.py", "runbot"]
