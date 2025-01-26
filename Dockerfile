@@ -4,6 +4,11 @@ FROM python:3.9-slim-buster
 # Переменная окружения
 ENV PYTHONUNBUFFERED=1
 
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    default-libmysqlclient-dev
+
 # Создаём рабочую директорию
 WORKDIR /app
 
