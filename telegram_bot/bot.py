@@ -237,22 +237,39 @@ async def view_commission_info(message: types.Message, state: FSMContext):
             await message.reply("Пожалуйста, выберите комиссию из предложенного списка.")
 
 
-# Функция для отправки уведомлений о смене статуса обращения
+import asyncio
+from asgiref.sync import sync_to_async
+
+# 1) Оборачиваем работу с ORM в sync_to_async:
+
+@sync_to_async
+def get_unsent_notifications():
+    # Можно добавить select_related, чтобы не вызывать лишних запросов, если нужно.
+    return list(Notification.objects.select_related('appeal', 'user').filter(sent=False))
+
+@sync_to_async
+def mark_notification_sent(notification):
+    notification.sent = True
+    notification.save()
+
 async def send_notifications():
     while True:
-        notifications = Notification.objects.filter(sent=False)
+        # Вызываем синхронную ORM-функцию через await
+        notifications = await get_unsent_notifications()
+
         for notification in notifications:
             appeal_message = notification.appeal.appeal_text
             user_id = notification.user.user_id
+            # bot.send_message — асинхронный вызов, поэтому можно await-ить напрямую
             await bot.send_message(
                 user_id,
                 f"Статус вашего обращения '{appeal_message}' изменился на: {notification.status}"
             )
-            notification.sent = True
-            notification.save()
+            # Снова синхронная операция ORM => обёртка sync_to_async
+            await mark_notification_sent(notification)
 
-        await asyncio.sleep(60)  # Проверка каждые 60 секунд
-
+        # Ждём 60 секунд перед следующей проверкой
+        await asyncio.sleep(60)
 
 # Команда для просмотра списка обращений (админ)
 @dp.message_handler(commands=['admin_appeals'])
