@@ -3,7 +3,6 @@ version: '3.8'
 services:
   db:
     image: mariadb:10.6
-    container_name: bot_db
     restart: always
 
     # Вместо ручного environment используем .env
