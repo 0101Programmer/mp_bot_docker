@@ -364,6 +364,16 @@ async def send_notifications():
         await asyncio.sleep(60)
 
 # ----------------- Команды для админа ----------------- #
+@sync_to_async
+def is_user_admin(user_id):
+    """Проверяет, является ли пользователь администратором."""
+    try:
+        user = UserModel.objects.get(user_id=user_id)
+        return user.is_admin
+    except UserModel.DoesNotExist:
+        return False
+
+
 @dp.message_handler(commands=['register_admin'])
 async def register_admin_command(message: types.Message):
     telegram_id = message.from_user.id
@@ -412,7 +422,10 @@ async def process_admin_position(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['admin_appeals'])
 async def admin_appeals(message: types.Message):
-    if str(message.from_user.id) != str(ADMIN_USER_ID):
+    user_id = message.from_user.id
+    is_admin = await is_user_admin(user_id)
+
+    if not is_admin:
         await message.reply("У вас нет прав для выполнения этой команды.")
         return
 
@@ -431,16 +444,17 @@ async def admin_appeals(message: types.Message):
     else:
         await message.reply("Нет зарегистрированных обращений.")
 
-
 @dp.message_handler(commands=['admin_change_status'])
 async def admin_change_status_start(message: types.Message):
-    if str(message.from_user.id) != str(ADMIN_USER_ID):
+    user_id = message.from_user.id
+    is_admin = await is_user_admin(user_id)
+
+    if not is_admin:
         await message.reply("У вас нет прав для выполнения этой команды.")
         return
 
     await Form.admin_change_status.set()
     await message.reply("Введите ID обращения и новый статус в формате: ID, новый статус")
-
 
 @dp.message_handler(state=Form.admin_change_status)
 async def admin_change_status(message: types.Message, state: FSMContext):
@@ -460,6 +474,7 @@ async def admin_change_status(message: types.Message, state: FSMContext):
 
         await state.finish()
         await message.reply(f"Статус обращения с ID {appeal_id} изменен на: {new_status}")
+    except Appeal.DoesNotExist:
+        await message.reply(f"Обращение с ID {appeal_id} не найдено.")
     except Exception as e:
         await message.reply(f"Произошла ошибка: {e}")
-
