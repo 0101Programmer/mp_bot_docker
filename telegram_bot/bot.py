@@ -380,7 +380,7 @@ async def register_admin_command(message: types.Message):
     await sync_to_async(user_obj.save)()
 
     # Проверка наличия уже активной заявки
-    existing_request = await sync_to_async(AdminRequest.objects.filter)(user=user_obj, status='pending').first()
+    existing_request = await sync_to_async(lambda: AdminRequest.objects.filter(user=user_obj, status='pending').first())()
     if existing_request:
         await message.reply("У вас уже есть заявка на получение административных прав, ожидающая одобрения.")
         return
