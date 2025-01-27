@@ -375,8 +375,8 @@ async def register_admin_command(message: types.Message):
     user_obj, created = await upsert_user(telegram_id, username)
 
     # Обновляем имя и фамилию пользователя
-    await sync_to_async(user_obj.first_name.__set__)(first_name)
-    await sync_to_async(user_obj.last_name.__set__)(last_name)
+    user_obj.first_name = first_name
+    user_obj.last_name = last_name
     await sync_to_async(user_obj.save)()
 
     # Проверка наличия уже активной заявки
