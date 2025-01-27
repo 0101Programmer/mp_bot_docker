@@ -365,10 +365,10 @@ async def send_notifications():
 
 # ----------------- Команды для админа ----------------- #
 @sync_to_async
-def is_user_admin(telegram_id):
+def is_user_admin(user_id):
     """Проверяет, является ли пользователь администратором."""
     try:
-        user = UserModel.objects.get(telegram_id=telegram_id)
+        user = UserModel.objects.get(user_id=user_id)
         return user.is_admin
     except UserModel.DoesNotExist:
         return False
@@ -376,13 +376,13 @@ def is_user_admin(telegram_id):
 
 @dp.message_handler(commands=['register_admin'])
 async def register_admin_command(message: types.Message):
-    telegram_id = message.from_user.id
+    user_id = message.from_user.id
     username = message.from_user.username or "N/A"
     first_name = message.from_user.first_name or ""
     last_name = message.from_user.last_name or ""
 
     # Создание или обновление пользователя в БД
-    user_obj, created = await upsert_user(telegram_id, username)
+    user_obj, created = await upsert_user(user_id, username)
 
     # Обновляем имя и фамилию пользователя
     user_obj.first_name = first_name
@@ -406,13 +406,13 @@ async def process_admin_position(message: types.Message, state: FSMContext):
         await message.reply("Должность не может быть пустой. Пожалуйста, введите вашу должность:")
         return
 
-    telegram_id = message.from_user.id
+    user_id = message.from_user.id
     username = message.from_user.username or "N/A"
     first_name = message.from_user.first_name or ""
     last_name = message.from_user.last_name or ""
 
     # Получение пользователя из БД
-    user_obj = await get_user_by_id(telegram_id)
+    user_obj = await get_user_by_id(user_id)
 
     # Создание заявки на админку
     admin_request = await create_admin_request(user_obj, admin_position)
