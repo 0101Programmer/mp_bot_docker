@@ -365,10 +365,10 @@ async def send_notifications():
 
 # ----------------- Команды для админа ----------------- #
 @sync_to_async
-def is_user_admin(user_id):
+def is_user_admin(telegram_id):
     """Проверяет, является ли пользователь администратором."""
     try:
-        user = UserModel.objects.get(user_id=user_id)
+        user = UserModel.objects.get(telegram_id=telegram_id)
         return user.is_admin
     except UserModel.DoesNotExist:
         return False
