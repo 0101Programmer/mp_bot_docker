@@ -14,7 +14,7 @@ class CommissionInfoAdmin(admin.ModelAdmin):
 
 @admin.register(Appeal)
 class AppealAdmin(admin.ModelAdmin):
-    list_display = ('user_id', 'telegram_id', 'id', 'user', 'commission', 'status')
+    list_display = ('user_id', 'id', 'user', 'commission', 'status')
     search_fields = ('user__username', 'id')
     list_filter = ('status',)
 
