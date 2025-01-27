@@ -1,5 +1,4 @@
-import os
-import asyncio
+import os, asyncio, logging
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
@@ -12,16 +11,22 @@ from asgiref.sync import sync_to_async
 
 # Импорт Django-моделей
 from .models import User as UserModel, Appeal, CommissionInfo, Notification, AdminRequest
-API_TOKEN = settings.TELEGRAM_API_TOKEN
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=settings.TELEGRAM_API_TOKEN)
 
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 dp.middleware.setup(LoggingMiddleware())
 
 FILE_DIR = "uploads/"
-ADMIN_USER_ID = os.getenv("ADMIN_USER_ID", "123456789")
 
+# Настройка базового конфигуратора логирования
+logging.basicConfig(
+    level=logging.INFO,  # Уровень логирования (можно изменить на DEBUG, WARNING и т.д.)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # Формат логов
+)
+
+# Создание экземпляра логгера
+logger = logging.getLogger(__name__)
 
 # ----------- Вспомогательные sync_to_async функции для ORM ------------
 
@@ -362,6 +367,10 @@ async def send_notifications():
             )
             await mark_notification_sent(notif)  # sync_to_async
         await asyncio.sleep(60)
+
+async def on_startup(dp):
+    asyncio.create_task(send_notifications())
+    logger.info("Фоновая задача send_notifications запущена.")
 
 # ----------------- Команды для админа ----------------- #
 @sync_to_async

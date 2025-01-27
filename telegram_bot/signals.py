@@ -1,17 +1,42 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .models import AdminRequest
+from .models import User, Notification
+import logging
 
-@receiver(post_save, sender=AdminRequest)
-def handle_admin_request(sender, instance, **kwargs):
+logger = logging.getLogger(__name__)
+
+@receiver(pre_save, sender=User)
+def track_user_admin_status(sender, instance, **kwargs):
     """
-    Сигнал для обработки заявки на роль администратора.
+    Сохраняет предыдущее значение is_admin перед сохранением.
     """
-    if instance.status == 'approved' and not instance.user.is_admin:
-        # Назначаем пользователя администратором
-        instance.user.is_admin = True
-        instance.user.save()
-    elif instance.status == 'rejected' and instance.user.is_admin:
-        # Логика на случай отклонения заявки (опционально)
-        instance.user.is_admin = False
-        instance.user.save()
+    if instance.pk:
+        try:
+            previous = sender.objects.get(pk=instance.pk)
+            instance._is_admin_previous = previous.is_admin
+        except sender.DoesNotExist:
+            instance._is_admin_previous = False
+    else:
+        instance._is_admin_previous = False
+
+@receiver(post_save, sender=User)
+def notify_admin_status_change(sender, instance, created, **kwargs):
+    """
+    Создаёт уведомление при изменении статуса администратора.
+    """
+    if not created:
+        if hasattr(instance, '_is_admin_previous'):
+            if instance.is_admin != instance._is_admin_previous:
+                if instance.is_admin:
+                    message = 'Ваш статус администратора был одобрен.'
+                else:
+                    message = 'Ваш статус администратора был отклонен.'
+                
+                # Создание объекта Notification
+                Notification.objects.create(
+                    user=instance,
+                    appeal=None,
+                    status=message,
+                    sent=False
+                )
+                logger.info(f"Создано уведомление для пользователя {instance.user_id}: {message}")
