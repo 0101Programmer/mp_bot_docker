@@ -133,8 +133,8 @@ async def send_welcome(message: types.Message):
     user_obj, created = await upsert_user(user_id, username)
 
     # Обновляем имя и фамилию пользователя
-    await sync_to_async(user_obj.first_name.__set__)(first_name)
-    await sync_to_async(user_obj.last_name.__set__)(last_name)
+    user_obj.first_name = first_name
+    user_obj.last_name = last_name
     await sync_to_async(user_obj.save)()
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -363,7 +363,6 @@ async def send_notifications():
             await mark_notification_sent(notif)  # sync_to_async
         await asyncio.sleep(60)
 
-
 # ----------------- Команды для админа ----------------- #
 @dp.message_handler(commands=['register_admin'])
 async def register_admin_command(message: types.Message):
@@ -410,10 +409,6 @@ async def process_admin_position(message: types.Message, state: FSMContext):
 
     await message.reply("Ваша заявка на получение административных прав отправлена и ожидает одобрения.")
     await state.finish()
-
-
-
-
 
 @dp.message_handler(commands=['admin_appeals'])
 async def admin_appeals(message: types.Message):
