@@ -2,11 +2,14 @@ from django.db import models
 
 class User(models.Model):
     user_id = models.BigIntegerField(primary_key=True)
+    telegram_id = models.BigIntegerField(unique=True, null=True, blank=True)
     username = models.CharField(max_length=255, null=True, blank=True)
+    first_name = models.CharField(max_length=255, null=True, blank=True)  # Новое поле
+    last_name = models.CharField(max_length=255, null=True, blank=True)   # Новое поле
+    is_admin = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.username or str(self.user_id)
-
+        return self.username or f"{self.first_name} {self.last_name}" or str(self.user_id)
 
 class CommissionInfo(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -14,7 +17,6 @@ class CommissionInfo(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Appeal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -27,7 +29,6 @@ class Appeal(models.Model):
     def __str__(self):
         return f"Appeal #{self.id} from {self.user}"
 
-
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     appeal = models.ForeignKey(Appeal, on_delete=models.CASCADE)
@@ -36,3 +37,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for appeal {self.appeal_id} - {self.status}"
+
+class AdminRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'В ожидании'),
+        ('approved', 'Одобрено'),
+        ('rejected', 'Отклонено'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    admin_position = models.CharField(max_length=255)  # Новое поле для должности администратора
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    comment = models.TextField(blank=True, null=True)  # Комментарий администратора при отклонении
+
+    def __str__(self):
+        return f"AdminRequest от {self.user} - {self.get_status_display()}"

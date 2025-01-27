@@ -11,8 +11,7 @@ from django.conf import settings
 from asgiref.sync import sync_to_async
 
 # Импорт Django-моделей
-from .models import User as UserModel, Appeal, CommissionInfo, Notification
-
+from .models import User as UserModel, Appeal, CommissionInfo, Notification, AdminRequest
 API_TOKEN = settings.TELEGRAM_API_TOKEN
 bot = Bot(token=API_TOKEN)
 
@@ -32,6 +31,17 @@ def upsert_user(user_id, username):
     return UserModel.objects.update_or_create(
         user_id=user_id,
         defaults={'username': username}
+    )
+
+@sync_to_async
+def create_admin_request(user_obj, admin_position):
+    """Создать AdminRequest, если нет активной заявки."""
+    existing_request = AdminRequest.objects.filter(user=user_obj, status='pending').first()
+    if existing_request:
+        return existing_request
+    return AdminRequest.objects.create(
+        user=user_obj,
+        admin_position=admin_position
     )
 
 @sync_to_async
@@ -108,6 +118,7 @@ class Form(StatesGroup):
     attach_file = State()
     view_commission_info = State()
     admin_change_status = State()
+    admin_position = State()  # Новое состояние для должности администратора
 
 
 # ----------------- /start ----------------- #
@@ -115,9 +126,16 @@ class Form(StatesGroup):
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username or "N/A"
+    first_name = message.from_user.first_name or ""
+    last_name = message.from_user.last_name or ""
 
     # Сохраним/обновим пользователя в БД (sync_to_async)
     user_obj, created = await upsert_user(user_id, username)
+
+    # Обновляем имя и фамилию пользователя
+    await sync_to_async(user_obj.first_name.__set__)(first_name)
+    await sync_to_async(user_obj.last_name.__set__)(last_name)
+    await sync_to_async(user_obj.save)()
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("Написать обращение")
@@ -128,7 +146,6 @@ async def send_welcome(message: types.Message):
         "Пожалуйста, выберите действие.",
         reply_markup=markup
     )
-
 
 # ----------------- Написать обращение ----------------- #
 @dp.message_handler(lambda message: message.text == "Написать обращение")
@@ -348,6 +365,56 @@ async def send_notifications():
 
 
 # ----------------- Команды для админа ----------------- #
+@dp.message_handler(commands=['register_admin'])
+async def register_admin_command(message: types.Message):
+    telegram_id = message.from_user.id
+    username = message.from_user.username or "N/A"
+    first_name = message.from_user.first_name or ""
+    last_name = message.from_user.last_name or ""
+
+    # Создание или обновление пользователя в БД
+    user_obj, created = await upsert_user(telegram_id, username)
+
+    # Обновляем имя и фамилию пользователя
+    await sync_to_async(user_obj.first_name.__set__)(first_name)
+    await sync_to_async(user_obj.last_name.__set__)(last_name)
+    await sync_to_async(user_obj.save)()
+
+    # Проверка наличия уже активной заявки
+    existing_request = await sync_to_async(AdminRequest.objects.filter)(user=user_obj, status='pending').first()
+    if existing_request:
+        await message.reply("У вас уже есть заявка на получение административных прав, ожидающая одобрения.")
+        return
+
+    # Запрос должности администратора
+    await Form.admin_position.set()
+    await message.reply("Пожалуйста, введите вашу должность для административных прав:")
+
+@dp.message_handler(state=Form.admin_position)
+async def process_admin_position(message: types.Message, state: FSMContext):
+    admin_position = message.text.strip()
+    if not admin_position:
+        await message.reply("Должность не может быть пустой. Пожалуйста, введите вашу должность:")
+        return
+
+    telegram_id = message.from_user.id
+    username = message.from_user.username or "N/A"
+    first_name = message.from_user.first_name or ""
+    last_name = message.from_user.last_name or ""
+
+    # Получение пользователя из БД
+    user_obj = await get_user_by_id(telegram_id)
+
+    # Создание заявки на админку
+    admin_request = await create_admin_request(user_obj, admin_position)
+
+    await message.reply("Ваша заявка на получение административных прав отправлена и ожидает одобрения.")
+    await state.finish()
+
+
+
+
+
 @dp.message_handler(commands=['admin_appeals'])
 async def admin_appeals(message: types.Message):
     if str(message.from_user.id) != str(ADMIN_USER_ID):
