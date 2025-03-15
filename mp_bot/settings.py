@@ -83,29 +83,18 @@ WSGI_APPLICATION = 'mp_bot.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('DB_NAME', 'parliament_bot'),
-#         'USER': os.getenv('DB_USER', 'root'),
-#         'PASSWORD': os.getenv('DB_PASSWORD', 'admin'),
-#         'HOST': os.getenv('DB_HOST', 'localhost'),
-#         'PORT': '3306',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DB_NAME'),
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
+        # 'HOST': config('DB_HOST'),
+        'HOST': 'host.docker.internal',
         'PORT': config('DB_PORT'),
     }
 }
 
-# TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '0')
 
 # Password validation
