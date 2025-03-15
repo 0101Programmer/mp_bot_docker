@@ -487,3 +487,10 @@ async def admin_change_status(message: types.Message, state: FSMContext):
         await message.reply(f"Обращение с ID {appeal_id} не найдено.")
     except Exception as e:
         await message.reply(f"Произошла ошибка: {e}")
+
+# ----------------- Доработка бота ----------------- #
+
+# ----------------- Универсальный обработчик для всех сообщений ----------------- #
+@dp.message_handler()
+async def all_messages(message: types.Message):
+    await message.reply("Для начала работы с ботом, пожалуйста, введите команду /start.")
