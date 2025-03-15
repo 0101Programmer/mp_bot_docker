@@ -21,7 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+# SECRET_KEY = os.getenv('SECRET_KEY')
+
+# --- --- --- ---
+from decouple import config
+SECRET_KEY = config('SECRET_KEY')
+TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
+# --- --- --- ---
+
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -74,18 +83,29 @@ WSGI_APPLICATION = 'mp_bot.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.getenv('DB_NAME', 'parliament_bot'),
+#         'USER': os.getenv('DB_USER', 'root'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', 'admin'),
+#         'HOST': os.getenv('DB_HOST', 'localhost'),
+#         'PORT': '3306',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'parliament_bot'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'admin'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
 
-TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
+# TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '0')
 
 # Password validation

@@ -1,6 +1,6 @@
 import os, asyncio, logging
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, executor
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
