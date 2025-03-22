@@ -18,7 +18,7 @@ async def show_commissions(message: Message):
         if commissions:
             # Создаем inline-клавиатуру с кнопками для каждой комиссии
             keyboard = [
-                [InlineKeyboardButton(text=commission.name, callback_data=f"commission:{commission.id}")]
+                [InlineKeyboardButton(text=commission.name, callback_data=f"info_commission:{commission.id}")]
                 for commission in commissions
             ]
 
@@ -33,12 +33,11 @@ async def show_commissions(message: Message):
             await message.answer("Список комиссий пуст.")
 
     except Exception as e:
-        # Логируем ошибку
         logger.error(f"Ошибка при получении списка комиссий: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 # Обработчик выбора конкретной комиссии
-@router.callback_query(F.data.startswith("commission:"))
+@router.callback_query(F.data.startswith("info_commission:"))
 async def show_commission_info(callback_query, message=None):
     try:
         # Извлекаем ID комиссии из callback_data
@@ -80,7 +79,7 @@ async def go_back_to_commissions(callback_query):
         if commissions:
             # Создаем inline-клавиатуру с кнопками для каждой комиссии
             keyboard = [
-                [InlineKeyboardButton(text=commission.name, callback_data=f"commission:{commission.id}")]
+                [InlineKeyboardButton(text=commission.name, callback_data=f"info_commission:{commission.id}")]
                 for commission in commissions
             ]
 

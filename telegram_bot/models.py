@@ -1,4 +1,5 @@
 from django.db import models
+from asgiref.sync import sync_to_async
 
 class User(models.Model):
     user_id = models.BigAutoField(primary_key=True)  # Автоматически генерируется
