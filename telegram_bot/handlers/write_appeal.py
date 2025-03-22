@@ -4,6 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+
 import logging
 import os
 from ..models import CommissionInfo, Appeal, User
@@ -157,6 +159,26 @@ async def process_file_choice(callback_query: CallbackQuery, state: FSMContext):
         await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 
+# Обработчик текстовых сообщений в состоянии "Прикрепление файла"
+@router.message(AppealForm.attaching_file, F.text)
+async def handle_invalid_file(message: Message):
+    try:
+        # Создаем inline-клавиатуру с кнопкой "Пропустить загрузку файла"
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Пропустить загрузку файла", callback_data="skip_file")]
+            ]
+        )
+
+        # Отправляем сообщение с инструкцией
+        await message.answer(
+            "Некорректный формат файла. Пожалуйста, отправьте фото или документ.",
+            reply_markup=markup
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при обработке текстового сообщения: {e}")
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
 # Обработчик загрузки файла
 @router.message(AppealForm.attaching_file, F.photo | F.document)
 async def process_file_upload(message: Message, state: FSMContext):
@@ -179,20 +201,33 @@ async def process_file_upload(message: Message, state: FSMContext):
             file_path = f"{file_dir}{message.document.file_name}"
             await message.bot.download_file(file.file_path, file_path)
 
-        # Проверяем, был ли загружен файл
-        if file_path is None:
-            await message.answer("Файл не был загружен. Пожалуйста, отправьте фото или документ.")
-            return
-
         # Обновляем состояние с путём к файлу
         await state.update_data(file_path=file_path)
 
         # Сохраняем данные в базу данных
         data = await state.get_data()
         await save_appeal_to_db(data, message.from_user.id)
+
+        # Отправляем сообщение об успешной отправке обращения
         await message.answer("Ваше обращение успешно отправлено!")
         await state.clear()
 
     except Exception as e:
         logger.error(f"Ошибка при загрузке файла: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
+# Обработчик inline-кнопки "Пропустить загрузку файла"
+@router.callback_query(AppealForm.attaching_file, F.data == "skip_file")
+async def skip_file_upload(callback_query: CallbackQuery, state: FSMContext):
+    try:
+        # Сохраняем данные без файла
+        data = await state.get_data()
+        await save_appeal_to_db(data, callback_query.from_user.id)
+
+        # Отправляем сообщение об успешной отправке обращения
+        await callback_query.message.edit_text("Ваше обращение успешно отправлено!")
+        await state.clear()
+
+    except Exception as e:
+        logger.error(f"Ошибка при пропуске загрузки файла: {e}")
+        await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
