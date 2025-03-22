@@ -1,11 +1,11 @@
 from django.db import models
 
 class User(models.Model):
-    user_id = models.BigIntegerField(primary_key=True)
+    user_id = models.BigAutoField(primary_key=True)  # Автоматически генерируется
     telegram_id = models.BigIntegerField(unique=True, null=True, blank=True)
     username = models.CharField(max_length=255, null=True, blank=True)
-    first_name = models.CharField(max_length=255, null=True, blank=True)  # Новое поле
-    last_name = models.CharField(max_length=255, null=True, blank=True)   # Новое поле
+    first_name = models.CharField(max_length=255, null=True, blank=True)
+    last_name = models.CharField(max_length=255, null=True, blank=True)
     is_admin = models.BooleanField(default=False)
 
     def __str__(self):
