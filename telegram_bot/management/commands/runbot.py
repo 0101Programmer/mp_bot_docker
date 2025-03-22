@@ -1,12 +1,14 @@
 import asyncio
 from django.core.management.base import BaseCommand
-from aiogram.utils import executor
-from telegram_bot.bot import dp, send_notifications
+from telegram_bot.bot import start_bot
 
 class Command(BaseCommand):
-    help = 'Запуск Telegram-бота (aiogram)'
+    help = 'Запуск Telegram-бота (aiogram 3.x)'
 
     def handle(self, *args, **options):
-        loop = asyncio.get_event_loop()
-        loop.create_task(send_notifications())
-        executor.start_polling(dp, skip_updates=True)
+        self.stdout.write("Запуск Telegram-бота...")
+        try:
+            # Запускаем бота через asyncio.run
+            asyncio.run(start_bot())
+        except KeyboardInterrupt:
+            self.stdout.write("Бот остановлен.")

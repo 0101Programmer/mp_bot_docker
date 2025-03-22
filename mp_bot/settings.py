@@ -90,7 +90,8 @@ DATABASES = {
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
         # 'HOST': config('DB_HOST'),
-        'HOST': 'host.docker.internal',
+        # 'HOST': 'host.docker.internal',
+        'HOST': config('DB_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_DB_HOST'),
         'PORT': config('DB_PORT'),
     }
 }
