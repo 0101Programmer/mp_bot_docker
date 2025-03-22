@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 # Обработчик текста "Описание комиссий"
-@router.message(lambda message: message.text =="Описание комиссий")
+@router.message(F.text == "Описание комиссий")
 async def show_commissions(message: Message):
     try:
         # Получаем все комиссии из базы данных

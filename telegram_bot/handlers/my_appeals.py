@@ -1,5 +1,5 @@
 from aiogram.types import Message
-from aiogram import Router
+from aiogram import Router, F
 from asgiref.sync import sync_to_async
 from ..models import User, Appeal  # Импортируем модели User и Appeal
 import logging  # Импортируем модуль logging
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)  # Создаем логгер для те�
 router = Router()
 
 # Обработчик текста "Отследить статус обращения"
-@router.message(lambda message: message.text == "Отследить статус обращения")
+@router.message(F.text == "Отследить статус обращения")
 async def track_appeal_status(message: Message):
     # Получаем Telegram ID пользователя
     telegram_id = message.from_user.id
