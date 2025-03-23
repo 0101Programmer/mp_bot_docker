@@ -14,6 +14,8 @@ from telegram_bot.handlers.write_appeal import router as write_appeal_router
 from telegram_bot.handlers.admin_commands import router as admin_commands_router
 from telegram_bot.handlers.admin_appeal import router as admin_appeal_router
 from telegram_bot.handlers.admin_commands_package.add_commission import router as add_commission_router
+from telegram_bot.handlers.admin_commands_package.manage_admin_requests import router as manage_admin_requests_router
+
 
 
 # === ЛОГИРОВАНИЕ ===
@@ -39,6 +41,7 @@ dp.include_router(write_appeal_router)
 dp.include_router(admin_commands_router)
 dp.include_router(admin_appeal_router)
 dp.include_router(add_commission_router)
+dp.include_router(manage_admin_requests_router)
 
 # === РЕГИСТРАЦИЯ РОУТЕРА ПРОСТО ТЕКСТОВЫХ СООБЩЕНИЙ ===
 dp.include_router(other_router)
