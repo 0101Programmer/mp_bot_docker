@@ -37,15 +37,12 @@ async def main():
         print("Запуск Django сервера...")
         django_server = subprocess.Popen(
             ["python", "manage.py", "runserver"],
-            stdout=subprocess.DEVNULL,  # Игнорируем вывод
-            stderr=subprocess.DEVNULL,  # Игнорируем ошибки
         )
 
         # Ждём немного, чтобы убедиться, что сервер запустился
-        await asyncio.sleep(10)  # Увеличиваем задержку до 10 секунд
+        await asyncio.sleep(1)
 
         # Запускаем бота
-        print("Запуск Telegram бота...")
         run_command(["python", "manage.py", "runbot"])
 
         # Ждём завершения процессов

@@ -10,6 +10,7 @@ from ..models import AdminRequest, User
 # Создаем роутер для обработки команд
 router = Router()
 
+
 # Определяем состояния
 class AdminRequestState(StatesGroup):
     waiting_for_position = State()  # Состояние для ожидания ввода должности
@@ -27,7 +28,14 @@ async def admin_command(message: Message):
 
         # Проверяем, является ли пользователь администратором
         if user.is_admin:
-            await message.answer("Вы являетесь администратором.")
+            # Создаем инлайн-клавиатуру для администратора
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
+            builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
+            builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
+            builder.adjust(1)
+
+            await message.answer("Выберите действие:", reply_markup=builder.as_markup())
         else:
             # Проверяем, есть ли у пользователя активная заявка на административные права
             admin_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user).exists)()
@@ -49,3 +57,76 @@ async def admin_command(message: Message):
 
     except User.DoesNotExist:
         await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
+
+
+# Обработчик для просмотра заявок в ожидании
+@router.callback_query(F.data == "view_pending_requests")
+async def view_pending_requests(callback: CallbackQuery):
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
+
+    # Получаем все заявки в статусе "pending"
+    pending_requests = await sync_to_async(list)(AdminRequest.objects.filter(status='pending'))
+
+    if pending_requests:
+        for request in pending_requests:
+            # Асинхронно получаем имя пользователя
+            username = await sync_to_async(lambda: request.user.username)()
+            response = (
+                f"Заявка в ожидании:\n"
+                f"ID: {request.id}\n"
+                f"Пользователь: {username}\n"
+                f"Должность: {request.admin_position}"
+            )
+            await callback.message.answer(response)
+    else:
+        await callback.message.answer("Нет заявок в ожидании.")
+
+
+# Обработчик для просмотра одобренных заявок
+@router.callback_query(F.data == "view_approved_requests")
+async def view_approved_requests(callback: CallbackQuery):
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
+
+    # Получаем все заявки в статусе "approved"
+    approved_requests = await sync_to_async(list)(AdminRequest.objects.filter(status='approved'))
+
+    if approved_requests:
+        for request in approved_requests:
+            # Асинхронно получаем имя пользователя
+            username = await sync_to_async(lambda: request.user.username)()
+            response = (
+                f"Одобренная заявка:\n"
+                f"ID: {request.id}\n"
+                f"Пользователь: {username}\n"
+                f"Должность: {request.admin_position}"
+            )
+            await callback.message.answer(response)
+    else:
+        await callback.message.answer("Нет одобренных заявок.")
+
+
+# Обработчик для просмотра отклонённых заявок
+@router.callback_query(F.data == "view_rejected_requests")
+async def view_rejected_requests(callback: CallbackQuery):
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
+
+    # Получаем все заявки в статусе "rejected"
+    rejected_requests = await sync_to_async(list)(AdminRequest.objects.filter(status='rejected'))
+
+    if rejected_requests:
+        for request in rejected_requests:
+            # Асинхронно получаем имя пользователя
+            username = await sync_to_async(lambda: request.user.username)()
+            response = (
+                f"Отклонённая заявка:\n"
+                f"ID: {request.id}\n"
+                f"Пользователь: {username}\n"
+                f"Должность: {request.admin_position}\n"
+                f"Комментарий: {request.comment}"
+            )
+            await callback.message.answer(response)
+    else:
+        await callback.message.answer("Нет отклонённых заявок.")
