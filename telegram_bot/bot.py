@@ -9,6 +9,9 @@ from telegram_bot.handlers.other import router as other_router
 from telegram_bot.handlers.my_appeals import router as my_appeals_router
 from telegram_bot.handlers.commissions_info import router as commissions_info_router
 from telegram_bot.handlers.write_appeal import router as write_appeal_router
+from telegram_bot.handlers.admin_commands import router as admin_commands_router
+from telegram_bot.handlers.admin_appeal import router as admin_appeal_router
+
 
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
@@ -30,6 +33,8 @@ dp.include_router(help_router)
 dp.include_router(my_appeals_router)
 dp.include_router(commissions_info_router)
 dp.include_router(write_appeal_router)
+dp.include_router(admin_commands_router)
+dp.include_router(admin_appeal_router)
 
 # === РЕГИСТРАЦИЯ РОУТЕРА ПРОСТО ТЕКСТОВЫХ СООБЩЕНИЙ ===
 dp.include_router(other_router)

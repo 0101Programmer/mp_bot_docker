@@ -10,4 +10,5 @@ router = Router()
 async def cmd_help(message: Message):
     await message.answer("Вот список доступных команд:\n"
                          "/start - Начать работу\n"
-                         "/help - Получить помощь")
+                         "/help - Получить помощь\n"
+                         "/admin - Команды администратора")
