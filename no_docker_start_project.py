@@ -39,9 +39,6 @@ async def main():
             ["python", "manage.py", "runserver"],
         )
 
-        # Ждём немного, чтобы убедиться, что сервер запустился
-        await asyncio.sleep(1)
-
         # Запускаем бота
         run_command(["python", "manage.py", "runbot"])
 

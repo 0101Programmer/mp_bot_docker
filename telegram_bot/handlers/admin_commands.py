@@ -13,7 +13,7 @@ router = Router()
 
 # Определяем состояния
 class AdminRequestState(StatesGroup):
-    waiting_for_position = State()  # Состояние для ожидания ввода должности
+    waiting_for_comment = State()  # Состояние для ожидания ввода комментария
 
 
 # Команда /admin
@@ -40,10 +40,32 @@ async def admin_command(message: Message):
             # Проверяем, есть ли у пользователя активная заявка на административные права
             admin_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user).exists)()
             if admin_request_exists:
-                # Если заявка существует, сообщаем об этом
-                await message.answer(
-                    "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте."
-                )
+                # Проверяем, есть ли отклонённая заявка
+                rejected_request_exists = await sync_to_async(
+                    AdminRequest.objects.filter(user=user, status='rejected').exists)()
+                if rejected_request_exists:
+                    # Получаем последнюю отклонённую заявку
+                    rejected_request = await sync_to_async(
+                        AdminRequest.objects.filter(user=user, status='rejected').last)()
+
+                    # Формируем сообщение с комментарием
+                    response = (
+                        f"Ваша предыдущая заявка на административные права была отклонена.\n"
+                        f"Комментарий: {rejected_request.comment}\n"
+                        f"Вы можете подать новую заявку."
+                    )
+
+                    # Создаем кнопку для подачи новой заявки
+                    builder = InlineKeyboardBuilder()
+                    builder.button(text="Подать заявку", callback_data="submit_admin_request")
+                    builder.adjust(1)
+
+                    await message.answer(response, reply_markup=builder.as_markup())
+                else:
+                    # Если заявка существует, но не отклонена, сообщаем об этом
+                    await message.answer(
+                        "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте."
+                    )
             else:
                 # Если заявки нет, предлагаем подать новую
                 builder = InlineKeyboardBuilder()
@@ -78,9 +100,77 @@ async def view_pending_requests(callback: CallbackQuery):
                 f"Пользователь: {username}\n"
                 f"Должность: {request.admin_position}"
             )
-            await callback.message.answer(response)
+
+            # Создаем инлайн-кнопку "Одобрить"
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Одобрить", callback_data=f"approve_request:{request.id}")
+            builder.button(text="Отклонить", callback_data=f"reject_request:{request.id}")
+            builder.adjust(1)
+
+            await callback.message.answer(response, reply_markup=builder.as_markup())
     else:
         await callback.message.answer("Нет заявок в ожидании.")
+
+
+# Обработчик для кнопки "Одобрить"
+@router.callback_query(F.data.startswith("approve_request:"))
+async def approve_request(callback: CallbackQuery):
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
+
+    # Получаем ID заявки из callback_data
+    request_id = int(callback.data.split(":")[1])
+
+    # Находим заявку в базе данных
+    request = await sync_to_async(AdminRequest.objects.get)(id=request_id)
+
+    # Меняем статус заявки на "Одобрено"
+    request.status = "approved"
+    await sync_to_async(request.save)()
+
+    # Отправляем сообщение об успешном одобрении
+    await callback.message.answer(f"Заявка ID {request_id} одобрена.")
+
+
+# Обработчик для кнопки "Отклонить"
+@router.callback_query(F.data.startswith("reject_request:"))
+async def reject_request(callback: CallbackQuery, state: FSMContext):
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
+
+    # Получаем ID заявки из callback_data
+    request_id = int(callback.data.split(":")[1])
+
+    # Сохраняем ID заявки в состоянии
+    await state.update_data(request_id=request_id)
+
+    # Переходим в состояние ожидания комментария
+    await state.set_state(AdminRequestState.waiting_for_comment)
+
+    # Запрашиваем комментарий
+    await callback.message.answer("Введите комментарий для отклонения заявки:")
+
+
+# Обработчик для ввода комментария
+@router.message(AdminRequestState.waiting_for_comment)
+async def process_comment(message: Message, state: FSMContext):
+    # Получаем данные из состояния
+    data = await state.get_data()
+    request_id = data["request_id"]
+
+    # Находим заявку в базе данных
+    request = await sync_to_async(AdminRequest.objects.get)(id=request_id)
+
+    # Меняем статус заявки на "Отклонено" и сохраняем комментарий
+    request.status = "rejected"
+    request.comment = message.text
+    await sync_to_async(request.save)()
+
+    # Сбрасываем состояние
+    await state.clear()
+
+    # Отправляем сообщение об успешном отклонении
+    await message.answer(f"Заявка ID {request_id} отклонена с комментарием: {message.text}")
 
 
 # Обработчик для просмотра одобренных заявок
