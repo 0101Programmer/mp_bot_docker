@@ -1,15 +1,13 @@
 from aiogram import Router, F
+from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.filters import Command, StateFilter
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
 from asgiref.sync import sync_to_async
+
 from ..models import AdminRequest, User
 
 # Создаем роутер для обработки команд
 router = Router()
-
 
 # Команда /admin
 @router.message(Command("admin"))
@@ -23,15 +21,13 @@ async def admin_command(message: Message):
 
         # Проверяем, является ли пользователь администратором
         if user.is_admin:
-            # Создаем инлайн-клавиатуру для администратора
+            # Создаем начальное меню для администратора
             builder = InlineKeyboardBuilder()
-            builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
-            builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
-            builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
-            builder.button(text="Добавить комиссию", callback_data="add_commission")
+            builder.button(text="Заявки на получение администратора", callback_data="admin_requests")
+            builder.button(text="Действия с комиссиями", callback_data="commission_actions")
             builder.adjust(1)
 
-            await message.answer("Выберите действие:", reply_markup=builder.as_markup())
+            await message.answer("Выберите категорию:", reply_markup=builder.as_markup())
         else:
             # Проверяем, есть ли у пользователя заявка в ожидании
             pending_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user, status='pending').exists)()
@@ -75,3 +71,45 @@ async def admin_command(message: Message):
 
     except User.DoesNotExist:
         await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
+
+
+# Обработчик для выбора "Заявки на получение администратора"
+@router.callback_query(F.data == "admin_requests")
+async def admin_requests_menu(callback: CallbackQuery):
+    # Создаем меню для работы с заявками
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
+    builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
+    builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
+    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
+    builder.adjust(1)
+
+    # Редактируем сообщение, чтобы показать новое меню
+    await callback.message.edit_text("Выберите действие с заявками:", reply_markup=builder.as_markup())
+
+
+# Обработчик для выбора "Действия с комиссиями"
+@router.callback_query(F.data == "commission_actions")
+async def commission_actions_menu(callback: CallbackQuery):
+    # Создаем меню для работы с комиссиями
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Добавить комиссию", callback_data="add_commission")
+    builder.button(text="Удалить комиссию", callback_data="delete_commissions")
+    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
+    builder.adjust(1)
+
+    # Редактируем сообщение, чтобы показать новое меню
+    await callback.message.edit_text("Выберите действие с комиссиями:", reply_markup=builder.as_markup())
+
+
+# Обработчик для кнопки "Назад"
+@router.callback_query(F.data == "back_to_main_menu")
+async def back_to_main_menu(callback: CallbackQuery):
+    # Создаем начальное меню для администратора
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Заявки на получение администратора", callback_data="admin_requests")
+    builder.button(text="Действия с комиссиями", callback_data="commission_actions")
+    builder.adjust(1)
+
+    # Редактируем сообщение, чтобы вернуться к начальному меню
+    await callback.message.edit_text("Выберите категорию:", reply_markup=builder.as_markup())
