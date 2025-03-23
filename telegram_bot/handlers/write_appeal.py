@@ -5,12 +5,17 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+import re
 
 import logging
 import os
 from ..models import CommissionInfo, Appeal, User
 
 logger = logging.getLogger(__name__)
+
+# Паттерны для проверки email и номера телефона
+EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+PHONE_PATTERN = r'^\+7\d{10}$'  # Российский номер в международном формате: +7XXXXXXXXXX
 
 # Функция для сохранения обращения в базу данных
 async def save_appeal_to_db(data, telegram_id):
@@ -105,24 +110,67 @@ async def process_contact_choice(callback_query: CallbackQuery, state: FSMContex
         logger.error(f"Ошибка при выборе контактов: {e}")
         await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
+
 # Обработчик ввода контактной информации
 @router.message(AppealForm.entering_contact_info)
 async def process_contact_info(message: Message, state: FSMContext):
     try:
-        contact_info = message.text
-        await state.update_data(contact_info=contact_info)
-        await message.answer("Напишите ваше обращение:")
-        await state.set_state(AppealForm.writing_appeal)
+        contact_info = message.text.strip()
+
+        # Проверяем, соответствует ли ввод паттерну email или номера телефона
+        if re.match(EMAIL_PATTERN, contact_info) or re.match(PHONE_PATTERN, contact_info):
+            # Сохраняем контактную информацию в состояние
+            await state.update_data(contact_info=contact_info)
+
+            # Переходим к следующему состоянию
+            await message.answer("Напишите ваше обращение:")
+            await state.set_state(AppealForm.writing_appeal)
+        else:
+            # Создаем inline-клавиатуру с кнопкой "Оставить анонимное обращение"
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Оставить анонимное обращение", callback_data="anonymous_appeal")
+            builder.adjust(1)
+
+            # Отправляем сообщение с инструкцией
+            await message.answer(
+                "Контактная информация некорректна. Пожалуйста, введите email или российский номер телефона в международном формате (+7XXXXXXXXXX).",
+                reply_markup=builder.as_markup()
+            )
 
     except Exception as e:
         logger.error(f"Ошибка при вводе контактной информации: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
+# Обработчик inline-кнопки "Оставить анонимное обращение"
+@router.callback_query(AppealForm.entering_contact_info, F.data == "anonymous_appeal")
+async def skip_contact_info(callback_query: CallbackQuery, state: FSMContext):
+    try:
+        # Очищаем контактную информацию (оставляем её пустой)
+        await state.update_data(contact_info=None)
+
+        # Переходим к следующему состоянию
+        await callback_query.message.edit_text("Напишите ваше обращение:")
+        await state.set_state(AppealForm.writing_appeal)
+
+    except Exception as e:
+        logger.error(f"Ошибка при пропуске контактной информации: {e}")
+        await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
 # Обработчик написания обращения
 @router.message(AppealForm.writing_appeal)
 async def process_appeal_text(message: Message, state: FSMContext):
     try:
+        # Получаем текст обращения
         appeal_text = message.text
+
+        # Проверяем длину текста
+        if len(appeal_text) < 50:
+            await message.answer(
+                "Обращение слишком короткое. Пожалуйста, напишите более подробное обращение (минимум 50 символов)."
+            )
+            return
+
+        # Сохраняем текст обращения в состояние
         await state.update_data(appeal_text=appeal_text)
 
         # Создаем inline-клавиатуру для прикрепления файла
@@ -131,7 +179,10 @@ async def process_appeal_text(message: Message, state: FSMContext):
         builder.button(text="Пропустить", callback_data="file:skip")
         builder.adjust(1)
 
+        # Отправляем сообщение с inline-клавиатурой
         await message.answer("Хотите прикрепить файл?", reply_markup=builder.as_markup())
+
+        # Переходим к следующему состоянию
         await state.set_state(AppealForm.attaching_file)
 
     except Exception as e:
@@ -191,15 +242,25 @@ async def process_file_upload(message: Message, state: FSMContext):
         os.makedirs(file_dir, exist_ok=True)
 
         if message.photo:
+            # Получаем информацию о фото
             file_id = message.photo[-1].file_id
             file = await message.bot.get_file(file_id)
-            file_path = f"{file_dir}{file.file_id}.jpg"
-            await message.bot.download_file(file.file_path, file_path)
+            file_extension = ".jpg"  # Фото всегда сохраняем как .jpg
+            file_type = "photo"
+
         elif message.document:
+            # Получаем информацию о документе
             file_id = message.document.file_id
             file = await message.bot.get_file(file_id)
-            file_path = f"{file_dir}{message.document.file_name}"
-            await message.bot.download_file(file.file_path, file_path)
+            file_extension = os.path.splitext(message.document.file_name)[-1]  # Расширение файла
+            file_type = "file"
+
+        # Формируем уникальное имя файла
+        unique_file_name = f"{message.from_user.id}_{file_type}_{file_id}{file_extension}"
+        file_path = os.path.join(file_dir, unique_file_name)
+
+        # Скачиваем файл
+        await message.bot.download_file(file.file_path, file_path)
 
         # Обновляем состояние с путём к файлу
         await state.update_data(file_path=file_path)
