@@ -1,6 +1,8 @@
 from aiogram.types import Message
 from aiogram import Router, F
 from asgiref.sync import sync_to_async
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+import os
 from ..models import User, Appeal  # Импортируем модели User и Appeal
 import logging  # Импортируем модуль logging
 
@@ -8,6 +10,7 @@ import logging  # Импортируем модуль logging
 logger = logging.getLogger(__name__)  # Создаем логгер для текущего модуля
 
 router = Router()
+
 
 # Обработчик текста "Отследить статус обращения"
 @router.message(F.text == "Отследить статус обращения")
@@ -32,7 +35,14 @@ async def track_appeal_status(message: Message):
                     f"Обращение: {appeal.appeal_text[:100]}...\n"  # Ограничиваем длину текста
                     f"Статус: {appeal.status}\n"
                 )
-                await message.answer(response)
+
+                # Создаем inline-клавиатуру с кнопкой "Удалить"
+                builder = InlineKeyboardBuilder()
+                builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
+                builder.adjust(1)
+
+                # Отправляем сообщение с inline-кнопкой
+                await message.answer(response, reply_markup=builder.as_markup())
         else:
             await message.answer("У вас пока нет обращений.")
 
@@ -42,3 +52,87 @@ async def track_appeal_status(message: Message):
         # Логируем ошибку
         logger.error(f"Ошибка при отслеживании статусов обращений: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
+# Обработчик нажатия на кнопку "Удалить"
+@router.callback_query(F.data.startswith("delete_appeal:"))
+async def confirm_delete_appeal(callback_query):
+    try:
+        # Извлекаем ID обращения из callback_data
+        appeal_id = int(callback_query.data.split(":")[1])
+
+        # Создаем inline-клавиатуру с кнопками "Да" и "Нет"
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Да", callback_data=f"confirm_delete:{appeal_id}")
+        builder.button(text="Нет", callback_data=f"cancel_delete:{appeal_id}")
+        builder.adjust(2)
+
+        # Отправляем сообщение с запросом подтверждения
+        await callback_query.message.edit_text(
+            "Удаление обращения очистит всю его историю, а также отзовёт его, "
+            "в случае, если оно не было обработано. Вы уверены?",
+            reply_markup=builder.as_markup()
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка при запросе подтверждения удаления: {e}")
+        await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
+# Обработчик подтверждения удаления
+@router.callback_query(F.data.startswith("confirm_delete:"))
+async def delete_appeal(callback_query):
+    try:
+        # Извлекаем ID обращения из callback_data
+        appeal_id = int(callback_query.data.split(":")[1])
+
+        # Находим обращение в базе данных
+        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Проверяем, есть ли прикреплённый файл
+        if appeal.file_path and os.path.exists(appeal.file_path):
+            try:
+                # Удаляем файл с диска
+                os.remove(appeal.file_path)
+            except Exception as e:
+                logger.error(f"Ошибка при удалении файла {appeal.file_path}: {e}")
+
+        # Удаляем обращение из базы данных
+        await sync_to_async(Appeal.objects.filter(id=appeal_id).delete)()
+
+        # Отправляем сообщение об успешном удалении
+        await callback_query.message.edit_text("Обращение успешно удалено.")
+
+    except Appeal.DoesNotExist:
+        await callback_query.message.edit_text("Обращение не найдено.")
+    except Exception as e:
+        logger.error(f"Ошибка при удалении обращения: {e}")
+        await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
+# Обработчик отмены удаления
+@router.callback_query(F.data.startswith("cancel_delete:"))
+async def cancel_delete_appeal(callback_query):
+    try:
+        # Извлекаем ID обращения из callback_data
+        appeal_id = int(callback_query.data.split(":")[1])
+
+        # Находим обращение в базе данных
+        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Формируем текст сообщения
+        response = (
+            f"Обращение: {appeal.appeal_text[:100]}...\n"  # Ограничиваем длину текста
+            f"Статус: {appeal.status}\n"
+        )
+
+        # Создаем inline-клавиатуру с кнопкой "Удалить"
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
+        builder.adjust(1)
+
+        # Отправляем сообщение с inline-кнопкой
+        await callback_query.message.edit_text(response, reply_markup=builder.as_markup())
+
+    except Appeal.DoesNotExist:
+        await callback_query.message.edit_text("Обращение не найдено.")
+    except Exception as e:
+        logger.error(f"Ошибка при отмене удаления: {e}")
+        await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")

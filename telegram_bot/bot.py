@@ -1,8 +1,7 @@
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage  # Для машины состояний
+from aiogram.fsm.storage.memory import MemoryStorage
 import asyncio
-import logging  # Для логирования
-import os  # Для работы с директориями
+import logging
 from django.conf import settings
 from telegram_bot.handlers.start import router as start_router
 from telegram_bot.handlers.help import router as help_router
@@ -11,19 +10,12 @@ from telegram_bot.handlers.my_appeals import router as my_appeals_router
 from telegram_bot.handlers.commissions_info import router as commissions_info_router
 from telegram_bot.handlers.write_appeal import router as write_appeal_router
 
-
-
 # === ЛОГИРОВАНИЕ ===
-# Настройка базового конфигуратора логирования
 logging.basicConfig(
     level=logging.INFO,  # Уровень логов (INFO - информационные сообщения)
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # Формат логов
 )
 logger = logging.getLogger(__name__)  # Создаем экземпляр логгера
-
-# === ДИРЕКТОРИЯ ДЛЯ ЗАГРУЗКИ ФАЙЛОВ ===
-FILE_DIR = "uploads/"  # Путь к папке для загрузки файлов
-os.makedirs(FILE_DIR, exist_ok=True)  # Создаем папку, если её нет
 
 # === ХРАНИЛИЩЕ СОСТОЯНИЙ ===
 storage = MemoryStorage()  # Инициализация хранилища состояний
