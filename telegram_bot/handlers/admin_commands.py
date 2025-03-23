@@ -33,13 +33,19 @@ async def admin_command(message: Message):
             builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
             builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
             builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
+            builder.button(text="Добавить комиссию", callback_data="add_commission")
             builder.adjust(1)
 
             await message.answer("Выберите действие:", reply_markup=builder.as_markup())
         else:
-            # Проверяем, есть ли у пользователя активная заявка на административные права
-            admin_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user).exists)()
-            if admin_request_exists:
+            # Проверяем, есть ли у пользователя заявка в ожидании
+            pending_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user, status='pending').exists)()
+            if pending_request_exists:
+                # Если заявка в ожидании существует, сообщаем об этом
+                await message.answer(
+                    "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте."
+                )
+            else:
                 # Проверяем, есть ли отклонённая заявка
                 rejected_request_exists = await sync_to_async(
                     AdminRequest.objects.filter(user=user, status='rejected').exists)()
@@ -62,20 +68,15 @@ async def admin_command(message: Message):
 
                     await message.answer(response, reply_markup=builder.as_markup())
                 else:
-                    # Если заявка существует, но не отклонена, сообщаем об этом
-                    await message.answer(
-                        "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте."
-                    )
-            else:
-                # Если заявки нет, предлагаем подать новую
-                builder = InlineKeyboardBuilder()
-                builder.button(text="Подать заявку", callback_data="submit_admin_request")
-                builder.adjust(1)
+                    # Если заявок нет, предлагаем подать новую
+                    builder = InlineKeyboardBuilder()
+                    builder.button(text="Подать заявку", callback_data="submit_admin_request")
+                    builder.adjust(1)
 
-                await message.answer(
-                    "У вас нет статуса администратора. Хотите подать заявку?",
-                    reply_markup=builder.as_markup()
-                )
+                    await message.answer(
+                        "У вас нет статуса администратора. Хотите подать заявку?",
+                        reply_markup=builder.as_markup()
+                    )
 
     except User.DoesNotExist:
         await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")

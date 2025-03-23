@@ -39,15 +39,15 @@ async def process_position(message: Message, state: FSMContext):
         # Находим пользователя в базе данных
         user = await sync_to_async(User.objects.get)(telegram_id=telegram_id)
 
-        # Проверяем, есть ли у пользователя активная заявка на административные права
-        admin_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user).exists)()
-        if admin_request_exists:
-            # Если заявка существует, сообщаем об этом
+        # Проверяем, есть ли у пользователя активная заявка на административные права со статусом "pending"
+        pending_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user, status='pending').exists)()
+        if pending_request_exists:
+            # Если заявка в ожидании существует, сообщаем об этом
             await message.answer(
                 "Ваша заявка на административные права уже находится на рассмотрении. Пожалуйста, ожидайте."
             )
         else:
-            # Если заявки нет, создаем новую
+            # Если заявки в ожидании нет, создаем новую
             admin_request = await sync_to_async(AdminRequest.objects.create)(
                 user=user,
                 admin_position=message.text

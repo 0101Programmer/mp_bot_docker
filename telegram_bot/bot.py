@@ -3,6 +3,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import asyncio
 import logging
 from django.conf import settings
+
+from telegram_bot.handlers import admin_commands_package
 from telegram_bot.handlers.start import router as start_router
 from telegram_bot.handlers.help import router as help_router
 from telegram_bot.handlers.other import router as other_router
@@ -11,6 +13,7 @@ from telegram_bot.handlers.commissions_info import router as commissions_info_ro
 from telegram_bot.handlers.write_appeal import router as write_appeal_router
 from telegram_bot.handlers.admin_commands import router as admin_commands_router
 from telegram_bot.handlers.admin_appeal import router as admin_appeal_router
+from telegram_bot.handlers.admin_commands_package.add_commission import router as add_commission_router
 
 
 # === ЛОГИРОВАНИЕ ===
@@ -35,6 +38,7 @@ dp.include_router(commissions_info_router)
 dp.include_router(write_appeal_router)
 dp.include_router(admin_commands_router)
 dp.include_router(admin_appeal_router)
+dp.include_router(add_commission_router)
 
 # === РЕГИСТРАЦИЯ РОУТЕРА ПРОСТО ТЕКСТОВЫХ СООБЩЕНИЙ ===
 dp.include_router(other_router)
