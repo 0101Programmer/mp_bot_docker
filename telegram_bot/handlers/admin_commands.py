@@ -25,6 +25,7 @@ async def admin_command(message: Message):
             builder = InlineKeyboardBuilder()
             builder.button(text="Заявки на получение администратора", callback_data="admin_requests")
             builder.button(text="Действия с комиссиями", callback_data="commission_actions")
+            builder.button(text="Просмотр обращений", callback_data="view_appeals")
             builder.adjust(1)
 
             await message.answer("Выберите категорию:", reply_markup=builder.as_markup())
