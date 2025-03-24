@@ -32,7 +32,7 @@ async def track_appeal_status(message: Message):
             # Отправляем каждое обращение отдельным сообщением
             for appeal in appeals:
                 # Ограничиваем длину текста для предварительного просмотра
-                preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 100 else appeal.appeal_text
+                preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
                 response = (
                     f"Обращение: {preview_text}\n"
@@ -41,7 +41,8 @@ async def track_appeal_status(message: Message):
 
                 # Создаем inline-клавиатуру с кнопками
                 builder = InlineKeyboardBuilder()
-                builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
+                if len(appeal.appeal_text) > 250:
+                    builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
                 builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
                 builder.adjust(1)  # Кнопки в одну строку
 
@@ -104,7 +105,7 @@ async def collapse_appeal(callback: CallbackQuery):
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
         # Ограничиваем длину текста для предварительного просмотра
-        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 100 else appeal.appeal_text
+        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
         # Формируем ответ с сокращённым текстом
         collapsed_response = (
@@ -114,7 +115,8 @@ async def collapse_appeal(callback: CallbackQuery):
 
         # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
         builder = InlineKeyboardBuilder()
-        builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
+        if len(appeal.appeal_text) > 250:
+            builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
         builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
         builder.adjust(1)
 
@@ -195,7 +197,7 @@ async def cancel_delete_appeal(callback_query: CallbackQuery):
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
         # Формируем текст сообщения
-        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 100 else appeal.appeal_text
+        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
         response = (
             f"Обращение: {preview_text}\n"
             f"Статус: {appeal.status}\n"
@@ -203,7 +205,8 @@ async def cancel_delete_appeal(callback_query: CallbackQuery):
 
         # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
         builder = InlineKeyboardBuilder()
-        builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
+        if len(appeal.appeal_text) > 250:
+            builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
         builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
         builder.adjust(1)  # Кнопки в одну колонку (вертикальное расположение)
 
