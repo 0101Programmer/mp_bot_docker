@@ -5,13 +5,14 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
 from ..models import User, Appeal  # Импортируем модели User и Appeal
 import logging  # Импортируем модуль logging
+from aiogram.types import FSInputFile
 
 # Настройка логгера
 logger = logging.getLogger(__name__)  # Создаем логгер для текущего модуля
 
 router = Router()
 
-
+# Обработчик для кнопки "Отследить статус обращения"
 @router.message(F.text == "Отследить статус обращения")
 async def track_appeal_status(message: Message):
     # Получаем Telegram ID пользователя
@@ -36,10 +37,19 @@ async def track_appeal_status(message: Message):
                 # Получаем название комиссии через sync_to_async
                 commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
 
+                # Проверяем наличие прикрепленного файла или фото
+                file_info = ""
+                if appeal.file_path:
+                    if "_file_" in appeal.file_path:
+                        file_info = "Есть прикрепленный документ.\n"
+                    elif "_photo_" in appeal.file_path:
+                        file_info = "Есть прикрепленное фото.\n"
+
                 response = (
                     f"Обращение: {preview_text}\n"
                     f"Статус: {appeal.status}\n"
                     f"Комиссия: {commission_name}\n"
+                    f"{file_info}"  # Добавляем информацию о файле, если есть
                 )
 
                 # Создаем inline-клавиатуру с кнопками
@@ -47,6 +57,11 @@ async def track_appeal_status(message: Message):
                 if len(appeal.appeal_text) > 250:
                     builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
                 builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
+
+                # Если есть файл, добавляем кнопку для просмотра
+                if appeal.file_path:
+                    builder.button(text="Посмотреть файл", callback_data=f"view_file:{appeal.id}")
+
                 builder.adjust(1)  # Кнопки в одну строку
 
                 # Отправляем сообщение с inline-кнопками
@@ -61,6 +76,33 @@ async def track_appeal_status(message: Message):
         logger.error(f"Ошибка при отслеживании статусов обращений: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
+# Обработчик для кнопки "Посмотреть файл"
+@router.callback_query(F.data.startswith("view_file:"))
+async def view_file(callback_query: CallbackQuery):
+    try:
+        # Извлекаем ID обращения из callback_data
+        appeal_id = int(callback_query.data.split(":")[1])
+
+        # Находим обращение в базе данных
+        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Проверяем, существует ли файл
+        if appeal.file_path and os.path.exists(appeal.file_path):
+            # Отправляем файл пользователю
+            file = FSInputFile(appeal.file_path)
+            await callback_query.message.answer_document(file)
+        else:
+            # Если файл не найден, отправляем сообщение об ошибке
+            await callback_query.message.answer("Файл не найден.")
+
+        # Убираем часы загрузки (подтверждаем выполнение callback)
+        await callback_query.answer()
+
+    except Appeal.DoesNotExist:
+        await callback_query.answer("Обращение не найдено.", show_alert=True)
+    except Exception as e:
+        logger.error(f"Ошибка при просмотре файла: {e}")
+        await callback_query.answer("Произошла ошибка. Пожалуйста, попробуйте позже.", show_alert=True)
 
 # Обработчик нажатия на кнопку "Показать полностью"
 @router.callback_query(lambda query: query.data.startswith("show_full"))
@@ -69,12 +111,21 @@ async def show_full_appeal(callback):
         # Извлекаем ID обращения из callback_data
         appeal_id = int(callback.data.split(":")[1])
 
-        # Находим обращение в базе данных
-        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+        # Находим обращение в базе данных с использованием select_related
+        appeal = await sync_to_async(Appeal.objects.select_related('commission').get)(id=appeal_id)
 
         # Получаем название комиссии через sync_to_async
         commission_name = await sync_to_async(
-            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
+        )()
+
+        # Проверяем наличие прикрепленного файла или фото
+        file_info = ""
+        if appeal.file_path:
+            if "_file_" in appeal.file_path:
+                file_info = "Есть прикрепленный документ.\n"
+            elif "_photo_" in appeal.file_path:
+                file_info = "Есть прикрепленное фото.\n"
 
         # Формируем ответ с полным текстом обращения
         full_response = (
@@ -82,12 +133,18 @@ async def show_full_appeal(callback):
             f"{appeal.appeal_text}\n\n"
             f"Статус: {appeal.status}\n"
             f"Комиссия: {commission_name}\n"
+            f"{file_info}"  # Добавляем информацию о файле, если есть
         )
 
         # Создаем inline-клавиатуру с кнопкой "Свернуть"
         builder = InlineKeyboardBuilder()
         builder.button(text="Свернуть", callback_data=f"collapse:{appeal.id}")
-        builder.adjust(1)
+
+        # Если есть файл, добавляем кнопку для просмотра
+        if appeal.file_path:
+            builder.button(text="Посмотреть файл", callback_data=f"view_file:{appeal.id}")
+
+        builder.adjust(1)  # Кнопки в одну строку
 
         # Редактируем текущее сообщение, заменяя его на полный текст и добавляя кнопку "Свернуть"
         await callback.message.edit_text(full_response, reply_markup=builder.as_markup())
@@ -109,29 +166,44 @@ async def collapse_appeal(callback: CallbackQuery):
         # Извлекаем ID обращения из callback_data
         appeal_id = int(callback.data.split(":")[1])
 
-        # Находим обращение в базе данных
-        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+        # Находим обращение в базе данных с использованием select_related
+        appeal = await sync_to_async(Appeal.objects.select_related('commission').get)(id=appeal_id)
 
         # Ограничиваем длину текста для предварительного просмотра
         preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
         # Получаем название комиссии через sync_to_async
         commission_name = await sync_to_async(
-            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
+        )()
+
+        # Проверяем наличие прикрепленного файла или фото
+        file_info = ""
+        if appeal.file_path:
+            if "_file_" in appeal.file_path:
+                file_info = "Есть прикрепленный документ.\n"
+            elif "_photo_" in appeal.file_path:
+                file_info = "Есть прикрепленное фото.\n"
 
         # Формируем ответ с сокращённым текстом
         collapsed_response = (
             f"Обращение: {preview_text}\n"
             f"Статус: {appeal.status}\n"
             f"Комиссия: {commission_name}\n"
+            f"{file_info}"  # Добавляем информацию о файле, если есть
         )
 
-        # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
+        # Создаем inline-клавиатуру с кнопками
         builder = InlineKeyboardBuilder()
         if len(appeal.appeal_text) > 250:
             builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
         builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
-        builder.adjust(1)
+
+        # Если есть файл, добавляем кнопку для просмотра
+        if appeal.file_path:
+            builder.button(text="Посмотреть файл", callback_data=f"view_file:{appeal.id}")
+
+        builder.adjust(1)  # Кнопки в одну строку
 
         # Редактируем текущее сообщение, возвращая его к сокращённому виду
         await callback.message.edit_text(collapsed_response, reply_markup=builder.as_markup())
@@ -206,26 +278,43 @@ async def cancel_delete_appeal(callback_query: CallbackQuery):
         # Извлекаем ID обращения из callback_data
         appeal_id = int(callback_query.data.split(":")[1])
 
-        # Находим обращение в базе данных
-        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+        # Находим обращение в базе данных с использованием select_related
+        appeal = await sync_to_async(Appeal.objects.select_related('commission').get)(id=appeal_id)
 
         # Получаем название комиссии через sync_to_async
         commission_name = await sync_to_async(
-            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
+        )()
+
+        # Проверяем наличие прикрепленного файла или фото
+        file_info = ""
+        if appeal.file_path:
+            if "_file_" in appeal.file_path:
+                file_info = "Есть прикрепленный документ.\n"
+            elif "_photo_" in appeal.file_path:
+                file_info = "Есть прикрепленное фото.\n"
+
+        # Ограничиваем длину текста для предварительного просмотра
+        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
         # Формируем текст сообщения
-        preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
         response = (
             f"Обращение: {preview_text}\n"
             f"Статус: {appeal.status}\n"
             f"Комиссия: {commission_name}\n"
+            f"{file_info}"  # Добавляем информацию о файле, если есть
         )
 
-        # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
+        # Создаем inline-клавиатуру с кнопками
         builder = InlineKeyboardBuilder()
         if len(appeal.appeal_text) > 250:
             builder.button(text="Показать полностью", callback_data=f"show_full:{appeal.id}")
         builder.button(text="Удалить", callback_data=f"delete_appeal:{appeal.id}")
+
+        # Если есть файл, добавляем кнопку для просмотра
+        if appeal.file_path:
+            builder.button(text="Посмотреть файл", callback_data=f"view_file:{appeal.id}")
+
         builder.adjust(1)  # Кнопки в одну колонку (вертикальное расположение)
 
         # Редактируем текущее сообщение, добавляя все кнопки
