@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
-
+import os
 from ...models import Appeal
 
 router = Router()
@@ -13,7 +13,7 @@ class AppealState(StatesGroup):
     waiting_for_id = State()
 
 # Клавиатура для обращения
-def get_appeal_keyboard(appeal_id: int, status: str, show_full_text: bool = False, text_length: int = 0):
+def get_appeal_keyboard(appeal_id: int, status: str, show_full_text: bool = False, text_length: int = 0, has_file: bool = False):
     builder = InlineKeyboardBuilder()
 
     # Если текст длинный и свёрнут, добавляем кнопку "Показать полностью"
@@ -23,6 +23,10 @@ def get_appeal_keyboard(appeal_id: int, status: str, show_full_text: bool = Fals
     # Если текст развёрнут, добавляем кнопку "Свернуть"
     elif text_length > 250 and show_full_text:
         builder.button(text="Свернуть", callback_data=f"appeal_collapse_{appeal_id}")
+
+    # Добавляем кнопку "Посмотреть файл", если файл существует
+    if has_file:
+        builder.button(text="Посмотреть файл", callback_data=f"appeal_view_file_{appeal_id}")
 
     # Добавляем основные кнопки только если текст свёрнут или его длина <= 250
     if text_length <= 250 or not show_full_text:
@@ -58,10 +62,13 @@ async def process_appeal_id(message: Message, state: FSMContext):
 
     try:
         # Получаем обращение с использованием select_related
-        appeal = await sync_to_async(Appeal.objects.select_related('user').get)(id=int(appeal_id))
+        appeal = await sync_to_async(Appeal.objects.select_related('user', 'commission').get)(id=int(appeal_id))
 
         # Получаем данные пользователя через sync_to_async
         user_info = await sync_to_async(lambda: appeal.user.username if appeal.user else "Неизвестен")()
+
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
 
         # Определяем, нужно ли обрезать текст
         if len(appeal.appeal_text) > 250:
@@ -69,6 +76,7 @@ async def process_appeal_id(message: Message, state: FSMContext):
             response = (
                 f"Обращение #{appeal.id}\n"
                 f"Пользователь: {user_info}\n"
+                f"Комиссия: {commission_name}\n"
                 f"Текст обращения: {truncated_text}\n"
                 f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
                 f"Статус: {appeal.status}"
@@ -79,13 +87,15 @@ async def process_appeal_id(message: Message, state: FSMContext):
                     appeal.id,
                     appeal.status,
                     show_full_text=False,
-                    text_length=len(appeal.appeal_text)
+                    text_length=len(appeal.appeal_text),
+                    has_file=bool(appeal.file_path)  # Проверяем наличие файла
                 )
             )
         else:
             response = (
                 f"Обращение #{appeal.id}\n"
                 f"Пользователь: {user_info}\n"
+                f"Комиссия: {commission_name}\n"
                 f"Текст обращения: {appeal.appeal_text}\n"
                 f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
                 f"Статус: {appeal.status}"
@@ -96,7 +106,8 @@ async def process_appeal_id(message: Message, state: FSMContext):
                     appeal.id,
                     appeal.status,
                     show_full_text=True,
-                    text_length=len(appeal.appeal_text)
+                    text_length=len(appeal.appeal_text),
+                    has_file=bool(appeal.file_path)  # Проверяем наличие файла
                 )
             )
 
@@ -108,18 +119,48 @@ async def process_appeal_id(message: Message, state: FSMContext):
     finally:
         await state.clear()
 
+@router.callback_query(F.data.startswith("appeal_view_file_"))
+async def view_file(callback: CallbackQuery):
+    appeal_id = int(callback.data.split("_")[3])  # Извлекаем ID обращения из callback_data
+
+    try:
+        # Получаем обращение
+        appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Проверяем, что файл существует
+        if appeal.file_path and os.path.exists(appeal.file_path):
+            # Отправляем файл пользователю
+            file = FSInputFile(appeal.file_path)
+            await callback.message.answer_document(file)
+        else:
+            await callback.message.answer("Файл не найден.")
+
+    except Exception as e:
+        print(f"Ошибка при отправке файла: {e}")
+        await callback.message.answer("Произошла ошибка при отправке файла.")
+    finally:
+        await callback.answer()  # Убираем подсветку кнопки
+
 # Обработка кнопки "Показать полностью"
 @router.callback_query(F.data.startswith("appeal_show_full_"))
 async def show_full_text(callback: CallbackQuery):
     appeal_id = int(callback.data.split("_")[3])  # Извлекаем ID обращения из callback_data
 
     try:
-        # Получаем обращение
-        appeal = await sync_to_async(Appeal.objects.select_related('user').get)(id=appeal_id)
+        # Получаем обращение с использованием select_related
+        appeal = await sync_to_async(Appeal.objects.select_related('user', 'commission').get)(id=appeal_id)
+
+        # Получаем данные пользователя через sync_to_async
+        user_info = await sync_to_async(lambda: appeal.user.username if appeal.user else "Неизвестен")()
+
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
 
         # Формируем ответ с полным текстом
         response = (
             f"Обращение #{appeal.id}\n"
+            f"Пользователь: {user_info}\n"
+            f"Комиссия: {commission_name}\n"
             f"Текст обращения: {appeal.appeal_text}\n"
             f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
             f"Статус: {appeal.status}"
@@ -132,9 +173,11 @@ async def show_full_text(callback: CallbackQuery):
                 appeal.id,
                 appeal.status,
                 show_full_text=True,
-                text_length=len(appeal.appeal_text)
+                text_length=len(appeal.appeal_text),
+                has_file=bool(appeal.file_path)  # Проверяем наличие файла
             )
         )
+
     except Exception as e:
         print(f"Ошибка при показе полного текста: {e}")
         await callback.message.answer("Произошла ошибка при обработке запроса.")
@@ -147,13 +190,21 @@ async def collapse_text(callback: CallbackQuery):
     appeal_id = int(callback.data.split("_")[2])  # Извлекаем ID обращения из callback_data
 
     try:
-        # Получаем обращение
-        appeal = await sync_to_async(Appeal.objects.select_related('user').get)(id=appeal_id)
+        # Получаем обращение с использованием select_related
+        appeal = await sync_to_async(Appeal.objects.select_related('user', 'commission').get)(id=appeal_id)
+
+        # Получаем данные пользователя через sync_to_async
+        user_info = await sync_to_async(lambda: appeal.user.username if appeal.user else "Неизвестен")()
+
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
 
         # Определяем, нужно ли обрезать текст
         truncated_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
         response = (
             f"Обращение #{appeal.id}\n"
+            f"Пользователь: {user_info}\n"
+            f"Комиссия: {commission_name}\n"
             f"Текст обращения: {truncated_text}\n"
             f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
             f"Статус: {appeal.status}"
@@ -166,9 +217,11 @@ async def collapse_text(callback: CallbackQuery):
                 appeal.id,
                 appeal.status,
                 show_full_text=False,
-                text_length=len(appeal.appeal_text)
+                text_length=len(appeal.appeal_text),
+                has_file=bool(appeal.file_path)  # Проверяем наличие файла
             )
         )
+
     except Exception as e:
         print(f"Ошибка при сворачивании текста: {e}")
         await callback.message.answer("Произошла ошибка при обработке запроса.")

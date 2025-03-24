@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)  # Создаем логгер для те�
 router = Router()
 
 
-# Обработчик текста "Отследить статус обращения"
 @router.message(F.text == "Отследить статус обращения")
 async def track_appeal_status(message: Message):
     # Получаем Telegram ID пользователя
@@ -23,7 +22,7 @@ async def track_appeal_status(message: Message):
         user = await sync_to_async(User.objects.get)(telegram_id=telegram_id)
 
         # Находим все обращения пользователя
-        appeals = await sync_to_async(list)(Appeal.objects.filter(user=user))
+        appeals = await sync_to_async(list)(Appeal.objects.filter(user=user).select_related('commission'))
 
         if appeals:
             # Отправляем первое сообщение
@@ -34,9 +33,13 @@ async def track_appeal_status(message: Message):
                 # Ограничиваем длину текста для предварительного просмотра
                 preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
+                # Получаем название комиссии через sync_to_async
+                commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+
                 response = (
                     f"Обращение: {preview_text}\n"
                     f"Статус: {appeal.status}\n"
+                    f"Комиссия: {commission_name}\n"
                 )
 
                 # Создаем inline-клавиатуру с кнопками
@@ -69,11 +72,16 @@ async def show_full_appeal(callback):
         # Находим обращение в базе данных
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+
         # Формируем ответ с полным текстом обращения
         full_response = (
             f"Полный текст обращения:\n\n"
             f"{appeal.appeal_text}\n\n"
-            f"Статус: {appeal.status}"
+            f"Статус: {appeal.status}\n"
+            f"Комиссия: {commission_name}\n"
         )
 
         # Создаем inline-клавиатуру с кнопкой "Свернуть"
@@ -107,10 +115,15 @@ async def collapse_appeal(callback: CallbackQuery):
         # Ограничиваем длину текста для предварительного просмотра
         preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
 
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+
         # Формируем ответ с сокращённым текстом
         collapsed_response = (
             f"Обращение: {preview_text}\n"
             f"Статус: {appeal.status}\n"
+            f"Комиссия: {commission_name}\n"
         )
 
         # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
@@ -196,11 +209,16 @@ async def cancel_delete_appeal(callback_query: CallbackQuery):
         # Находим обращение в базе данных
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
+        # Получаем название комиссии через sync_to_async
+        commission_name = await sync_to_async(
+            lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
+
         # Формируем текст сообщения
         preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
         response = (
             f"Обращение: {preview_text}\n"
             f"Статус: {appeal.status}\n"
+            f"Комиссия: {commission_name}\n"
         )
 
         # Создаем inline-клавиатуру с кнопками "Показать полностью" и "Удалить"
