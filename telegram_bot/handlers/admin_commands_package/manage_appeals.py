@@ -13,19 +13,27 @@ class AppealState(StatesGroup):
     waiting_for_id = State()
 
 # Клавиатура для обращения
-def get_appeal_keyboard(appeal_id: int, status: str):
+def get_appeal_keyboard(appeal_id: int, status: str, show_full_text: bool = False, text_length: int = 0):
     builder = InlineKeyboardBuilder()
 
-    # Если статус "Новое", добавляем кнопки "Принять" и "Отклонить"
-    if status == "Новое":
-        builder.button(text="Принять", callback_data=f"appeal_accept_{appeal_id}")
-        builder.button(text="Отклонить", callback_data=f"appeal_reject_{appeal_id}")
+    # Если текст длинный и свёрнут, добавляем кнопку "Показать полностью"
+    if text_length > 250 and not show_full_text:
+        builder.button(text="Показать полностью", callback_data=f"appeal_show_full_{appeal_id}")
 
-    # Кнопка "Удалить" доступна всегда
-    builder.button(text="Удалить", callback_data=f"appeal_delete_{appeal_id}")
+    # Если текст развёрнут, добавляем кнопку "Свернуть"
+    elif text_length > 250 and show_full_text:
+        builder.button(text="Свернуть", callback_data=f"appeal_collapse_{appeal_id}")
+
+    # Добавляем основные кнопки только если текст свёрнут или его длина <= 250
+    if text_length <= 250 or not show_full_text:
+        if status == "Новое":
+            builder.button(text="Принять", callback_data=f"appeal_accept_{appeal_id}")
+            builder.button(text="Отклонить", callback_data=f"appeal_reject_{appeal_id}")
+        builder.button(text="Удалить", callback_data=f"appeal_delete_{appeal_id}")
 
     builder.adjust(1)  # Кнопки будут расположены по одной в строке
     return builder.as_markup()
+
 
 # Обработка кнопки "Просмотр обращений"
 @router.callback_query(F.data == "view_appeals")
@@ -55,27 +63,117 @@ async def process_appeal_id(message: Message, state: FSMContext):
         # Получаем данные пользователя через sync_to_async
         user_info = await sync_to_async(lambda: appeal.user.username if appeal.user else "Неизвестен")()
 
-        # Формируем ответ
+        # Определяем, нужно ли обрезать текст
+        if len(appeal.appeal_text) > 250:
+            truncated_text = appeal.appeal_text[:100] + "..."
+            response = (
+                f"Обращение #{appeal.id}\n"
+                f"Пользователь: {user_info}\n"
+                f"Текст обращения: {truncated_text}\n"
+                f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
+                f"Статус: {appeal.status}"
+            )
+            await message.answer(
+                response,
+                reply_markup=get_appeal_keyboard(
+                    appeal.id,
+                    appeal.status,
+                    show_full_text=False,
+                    text_length=len(appeal.appeal_text)
+                )
+            )
+        else:
+            response = (
+                f"Обращение #{appeal.id}\n"
+                f"Пользователь: {user_info}\n"
+                f"Текст обращения: {appeal.appeal_text}\n"
+                f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
+                f"Статус: {appeal.status}"
+            )
+            await message.answer(
+                response,
+                reply_markup=get_appeal_keyboard(
+                    appeal.id,
+                    appeal.status,
+                    show_full_text=True,
+                    text_length=len(appeal.appeal_text)
+                )
+            )
+
+    except Appeal.DoesNotExist:
+        await message.answer("Обращение с таким ID не найдено.")
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+        await message.answer("Произошла ошибка при обработке запроса.")
+    finally:
+        await state.clear()
+
+# Обработка кнопки "Показать полностью"
+@router.callback_query(F.data.startswith("appeal_show_full_"))
+async def show_full_text(callback: CallbackQuery):
+    appeal_id = int(callback.data.split("_")[3])  # Извлекаем ID обращения из callback_data
+
+    try:
+        # Получаем обращение
+        appeal = await sync_to_async(Appeal.objects.select_related('user').get)(id=appeal_id)
+
+        # Формируем ответ с полным текстом
         response = (
             f"Обращение #{appeal.id}\n"
-            f"Пользователь: {user_info}\n"
             f"Текст обращения: {appeal.appeal_text}\n"
             f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
             f"Статус: {appeal.status}"
         )
 
-        # Отправляем сообщение с клавиатурой, зависящей от статуса
-        await message.answer(response, reply_markup=get_appeal_keyboard(appeal.id, appeal.status))
-
-    except Appeal.DoesNotExist:
-        await message.answer("Обращение с таким ID не найдено.")
+        # Обновляем сообщение с полным текстом и новой клавиатурой
+        await callback.message.edit_text(
+            response,
+            reply_markup=get_appeal_keyboard(
+                appeal.id,
+                appeal.status,
+                show_full_text=True,
+                text_length=len(appeal.appeal_text)
+            )
+        )
     except Exception as e:
-        # Логируем ошибку для отладки
-        print(f"Произошла ошибка: {e}")
-        await message.answer("Произошла ошибка при обработке запроса.")
+        print(f"Ошибка при показе полного текста: {e}")
+        await callback.message.answer("Произошла ошибка при обработке запроса.")
     finally:
-        # Сбрасываем состояние
-        await state.clear()
+        await callback.answer()  # Убираем подсветку кнопки
+
+# Обработка кнопки "Свернуть"
+@router.callback_query(F.data.startswith("appeal_collapse_"))
+async def collapse_text(callback: CallbackQuery):
+    appeal_id = int(callback.data.split("_")[2])  # Извлекаем ID обращения из callback_data
+
+    try:
+        # Получаем обращение
+        appeal = await sync_to_async(Appeal.objects.select_related('user').get)(id=appeal_id)
+
+        # Определяем, нужно ли обрезать текст
+        truncated_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
+        response = (
+            f"Обращение #{appeal.id}\n"
+            f"Текст обращения: {truncated_text}\n"
+            f"Контактная информация: {appeal.contact_info or 'Не указана'}\n"
+            f"Статус: {appeal.status}"
+        )
+
+        # Обновляем сообщение с обрезанным текстом и новой клавиатурой
+        await callback.message.edit_text(
+            response,
+            reply_markup=get_appeal_keyboard(
+                appeal.id,
+                appeal.status,
+                show_full_text=False,
+                text_length=len(appeal.appeal_text)
+            )
+        )
+    except Exception as e:
+        print(f"Ошибка при сворачивании текста: {e}")
+        await callback.message.answer("Произошла ошибка при обработке запроса.")
+    finally:
+        await callback.answer()  # Убираем подсветку кнопки
 
 # Обработка принятия обращения
 @router.callback_query(F.data.startswith("appeal_accept_"))
