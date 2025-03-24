@@ -25,7 +25,7 @@ class Appeal(models.Model):
     appeal_text = models.TextField()
     contact_info = models.CharField(max_length=255, null=True, blank=True)
     file_path = models.CharField(max_length=1024, null=True, blank=True)
-    status = models.CharField(max_length=255, default='Новая')
+    status = models.CharField(max_length=255, default='Новое')
 
     def __str__(self):
         return f"Appeal #{self.id} from {self.user}"

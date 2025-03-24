@@ -27,7 +27,7 @@ async def save_appeal_to_db(data, telegram_id):
         appeal_text=data["appeal_text"],
         contact_info=data.get("contact_info"),
         file_path=data.get("file_path"),
-        status="Новая"
+        status="Новое"
     )
     await sync_to_async(appeal.save)()
 
