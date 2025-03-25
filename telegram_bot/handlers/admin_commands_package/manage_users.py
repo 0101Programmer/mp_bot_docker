@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -9,6 +11,7 @@ from django.db.utils import IntegrityError
 
 router = Router()
 
+logger = logging.getLogger(__name__)
 
 # Состояния для FSM
 class UserAction(StatesGroup):
@@ -140,7 +143,7 @@ async def process_action(callback: CallbackQuery, state: FSMContext):
 
     except IntegrityError as e:
         # Логируем ошибку
-        print(f"Database IntegrityError: {e}")
+        logger.error(f"Database IntegrityError: {e}")
 
         # Отправляем сообщение пользователю
         await callback.message.answer("Что-то пошло не так, но мы уже работаем над этим!")
