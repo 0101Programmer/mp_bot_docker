@@ -16,6 +16,19 @@ class AddCommissionState(StatesGroup):
     waiting_for_description = State()  # Ожидание ввода описания комиссии
 
 
+# Обработчик для выбора "Действия с комиссиями"
+@router.callback_query(F.data == "commission_actions")
+async def commission_actions_menu(callback: CallbackQuery):
+    # Создаем меню для работы с комиссиями
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Добавить комиссию", callback_data="add_commission")
+    builder.button(text="Удалить комиссию", callback_data="delete_commissions")
+    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
+    builder.adjust(1)
+
+    # Редактируем сообщение, чтобы показать новое меню
+    await callback.message.edit_text("Выберите действие с комиссиями:", reply_markup=builder.as_markup())
+
 # Обработчик для начала добавления комиссии
 @router.callback_query(F.data == "add_commission")
 async def start_add_commission(callback: CallbackQuery, state: FSMContext):

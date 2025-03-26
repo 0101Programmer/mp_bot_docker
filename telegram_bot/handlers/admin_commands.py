@@ -75,34 +75,6 @@ async def admin_command(message: Message):
         await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
 
 
-# Обработчик для выбора "Заявки на получение администратора"
-@router.callback_query(F.data == "admin_requests")
-async def admin_requests_menu(callback: CallbackQuery):
-    # Создаем меню для работы с заявками
-    builder = InlineKeyboardBuilder()
-    builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
-    builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
-    builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
-    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
-    builder.adjust(1)
-
-    # Редактируем сообщение, чтобы показать новое меню
-    await callback.message.edit_text("Выберите действие с заявками:", reply_markup=builder.as_markup())
-
-
-# Обработчик для выбора "Действия с комиссиями"
-@router.callback_query(F.data == "commission_actions")
-async def commission_actions_menu(callback: CallbackQuery):
-    # Создаем меню для работы с комиссиями
-    builder = InlineKeyboardBuilder()
-    builder.button(text="Добавить комиссию", callback_data="add_commission")
-    builder.button(text="Удалить комиссию", callback_data="delete_commissions")
-    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
-    builder.adjust(1)
-
-    # Редактируем сообщение, чтобы показать новое меню
-    await callback.message.edit_text("Выберите действие с комиссиями:", reply_markup=builder.as_markup())
-
 
 # Обработчик для кнопки "Назад"
 @router.callback_query(F.data == "back_to_main_menu")

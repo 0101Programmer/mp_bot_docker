@@ -15,6 +15,19 @@ router = Router()
 class AdminRequestState(StatesGroup):
     waiting_for_comment = State()  # Состояние для ожидания ввода комментария
 
+# Обработчик для выбора "Заявки на получение администратора"
+@router.callback_query(F.data == "admin_requests")
+async def admin_requests_menu(callback: CallbackQuery):
+    # Создаем меню для работы с заявками
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Просмотр заявок в ожидании", callback_data="view_pending_requests")
+    builder.button(text="Просмотр одобренных заявок", callback_data="view_approved_requests")
+    builder.button(text="Просмотр отклонённых заявок", callback_data="view_rejected_requests")
+    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
+    builder.adjust(1)
+
+    # Редактируем сообщение, чтобы показать новое меню
+    await callback.message.edit_text("Выберите действие с заявками:", reply_markup=builder.as_markup())
 
 # Обработчик для просмотра заявок в ожидании
 @router.callback_query(F.data == "view_pending_requests")

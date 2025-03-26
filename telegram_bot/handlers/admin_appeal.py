@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -6,6 +8,8 @@ from aiogram.types import Message, CallbackQuery
 from asgiref.sync import sync_to_async
 
 from ..models import AdminRequest, User
+
+logger = logging.getLogger(__name__)
 
 # Создаем роутер для обработки команд
 router = Router()
@@ -40,14 +44,26 @@ async def process_position(message: Message, state: FSMContext):
         user = await sync_to_async(User.objects.get)(telegram_id=telegram_id)
 
         # Проверяем, есть ли у пользователя активная заявка на административные права со статусом "pending"
-        pending_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user, status='pending').exists)()
+        pending_request_exists = await sync_to_async(
+            AdminRequest.objects.filter(user=user, status='pending').exists
+        )()
         if pending_request_exists:
             # Если заявка в ожидании существует, сообщаем об этом
             await message.answer(
                 "Ваша заявка на административные права уже находится на рассмотрении. Пожалуйста, ожидайте."
             )
         else:
-            # Если заявки в ожидании нет, создаем новую
+            # Проверяем, есть ли у пользователя отклонённые заявки
+            rejected_requests_exist = await sync_to_async(
+                AdminRequest.objects.filter(user=user, status='rejected').exists
+            )()
+
+            if rejected_requests_exist:
+                # Удаляем все отклонённые заявки
+                await sync_to_async(AdminRequest.objects.filter(user=user, status='rejected').delete)()
+                logger.info("Старые отклонённые заявки пользователя были удалены.")
+
+            # Создаем новую заявку
             admin_request = await sync_to_async(AdminRequest.objects.create)(
                 user=user,
                 admin_position=message.text
