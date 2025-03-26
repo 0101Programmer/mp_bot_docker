@@ -18,8 +18,7 @@ from telegram_bot.handlers.admin_commands_package.manage_admin_requests import r
 from telegram_bot.handlers.admin_commands_package.manage_appeals import router as manage_appeals_router
 from telegram_bot.handlers.admin_commands_package.manage_users import router as manage_users_router
 
-
-
+from .tools.notifier_func import start_notification_task
 
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
@@ -51,16 +50,13 @@ dp.include_router(manage_users_router)
 # === РЕГИСТРАЦИЯ РОУТЕРА ПРОСТО ТЕКСТОВЫХ СООБЩЕНИЙ ===
 dp.include_router(other_router)
 
-# === ФОНОВАЯ ЗАДАЧА ===
-async def send_notifications():
-    while True:
-        logger.info("Отправка уведомлений...")  # Логируем отправку уведомлений
-        await asyncio.sleep(60)  # Отправляем каждые 60 секунд
 
 # === МЕТОД ДЛЯ ЗАПУСКА БОТА ===
 async def start_bot():
     logger.info("Запуск бота...")  # Логируем запуск бота
-    notification_task = asyncio.create_task(send_notifications())  # Создаем фоновую задачу
+
+    # Запускаем фоновую задачу отправки уведомлений
+    notification_task = await start_notification_task(bot)
 
     try:
         await dp.start_polling(bot, skip_updates=True)  # Запускаем бота
