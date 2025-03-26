@@ -228,17 +228,19 @@ async def collapse_text(callback: CallbackQuery):
     finally:
         await callback.answer()  # Убираем подсветку кнопки
 
-# Обработка принятия обращения
 @router.callback_query(F.data.startswith("appeal_accept_"))
 async def accept_appeal(callback: CallbackQuery):
     appeal_id = int(callback.data.split("_")[2])  # Извлекаем ID обращения из callback_data
 
     try:
-        # Обновляем статус обращения на "Обработана"
-        await sync_to_async(Appeal.objects.filter(id=appeal_id).update)(status="Обработано")
-
-        # Получаем обновленное обращение
+        # Получаем обращение
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Изменяем статус обращения
+        appeal.status = "Обработано"
+
+        # Сохраняем объект, чтобы сработал сигнал pre_save
+        await sync_to_async(appeal.save)()
 
         # Обновляем сообщение с новым статусом и клавиатурой
         response = (
@@ -255,17 +257,19 @@ async def accept_appeal(callback: CallbackQuery):
     finally:
         await callback.answer()  # Убираем подсветку кнопки
 
-# Обработка отклонения обращения
 @router.callback_query(F.data.startswith("appeal_reject_"))
 async def reject_appeal(callback: CallbackQuery):
     appeal_id = int(callback.data.split("_")[2])  # Извлекаем ID обращения из callback_data
 
     try:
-        # Обновляем статус обращения на "Отклонена"
-        await sync_to_async(Appeal.objects.filter(id=appeal_id).update)(status="Отклонено")
-
-        # Получаем обновленное обращение
+        # Получаем обращение
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
+
+        # Изменяем статус обращения
+        appeal.status = "Отклонено"
+
+        # Сохраняем объект, чтобы сработал сигнал pre_save
+        await sync_to_async(appeal.save)()
 
         # Обновляем сообщение с новым статусом и клавиатурой
         response = (
