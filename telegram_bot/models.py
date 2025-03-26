@@ -32,7 +32,7 @@ class Appeal(models.Model):
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    appeal = models.ForeignKey(Appeal, on_delete=models.CASCADE)
+    appeal = models.ForeignKey(Appeal, on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(max_length=255)
     sent = models.BooleanField(default=False)
 
