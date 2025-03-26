@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import User, CommissionInfo, Appeal, Notification, AdminRequest
+from django.contrib import messages
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -35,10 +36,13 @@ class AdminRequestAdmin(admin.ModelAdmin):
         for admin_request in queryset.filter(status='pending'):
             admin_request.status = 'approved'
             admin_request.save()
+
+            # Обновляем статус пользователя
             user = admin_request.user
             user.is_admin = True
             user.save()
-            # Отправка уведомления пользователю через сигналы
+
+        messages.success(request, "Выбранные заявки успешно одобрены.")
 
     approve_requests.short_description = "Одобрить выбранные заявки"
 
@@ -47,6 +51,7 @@ class AdminRequestAdmin(admin.ModelAdmin):
             admin_request.status = 'rejected'
             admin_request.comment = "Администратор не одобрил заявку."  # Пример комментария
             admin_request.save()
-            # Отправка уведомления пользователю через сигналы
+
+        messages.success(request, "Выбранные заявки успешно отклонены.")
 
     reject_requests.short_description = "Отклонить выбранные заявки"

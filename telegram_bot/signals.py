@@ -1,52 +1,46 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .models import User, Notification, Appeal
+from .models import User, Notification, Appeal, AdminRequest
 import logging
 from django.db.utils import IntegrityError
 
 logger = logging.getLogger(__name__)
 
-@receiver(pre_save, sender=User)
-def track_user_admin_status(sender, instance, **kwargs):
+@receiver(pre_save, sender=AdminRequest)
+def track_admin_request_status_change(sender, instance, **kwargs):
     """
-    Сохраняет предыдущее значение is_admin перед сохранением.
+    Отслеживает изменение статуса заявки и создает уведомление.
     """
-    if instance.pk:
+    if instance.pk:  # Проверяем, что объект уже существует в базе данных
         try:
-            previous = sender.objects.get(pk=instance.pk)
-            instance._is_admin_previous = previous.is_admin
-        except sender.DoesNotExist:
-            instance._is_admin_previous = False
-    else:
-        instance._is_admin_previous = False
+            # Получаем предыдущее состояние объекта из базы данных
+            previous_instance = sender.objects.get(pk=instance.pk)
+            previous_status = previous_instance.status
+            current_status = instance.status
 
+            # Если статус изменился
+            if previous_status != current_status:
+                logger.info(f"Статус заявки {instance.pk} изменен с '{previous_status}' на '{current_status}'.")
 
-@receiver(post_save, sender=User)
-def notify_admin_status_change(sender, instance, created, **kwargs):
-    """
-    Создаёт уведомление при изменении статуса администратора.
-    """
-    if not created:
-        # Проверяем, изменился ли статус is_admin
-        if hasattr(instance, '_is_admin_previous'):
-            if instance.is_admin != instance._is_admin_previous:
-                if instance.is_admin:
-                    message = 'Ваш статус администратора был одобрен.'
-                else:
-                    message = 'Ваш статус администратора был отклонен.'
-
+                # Создаем уведомление с информацией о новом статусе
                 try:
-                    # Пытаемся создать объект Notification
+                    if current_status == 'approved':
+                        message = "Ваша заявка на административные права была одобрена."
+                    elif current_status == 'rejected':
+                        message = "Ваша заявка на административные права была отклонена."
+
                     Notification.objects.create(
-                        user=instance,
+                        user=instance.user,
                         appeal=None,
                         status=message,
                         sent=False
                     )
-                    logger.info(f"Создано уведомление для пользователя {instance.user_id}: {message}")
+                    logger.info(f"Уведомление создано для пользователя {instance.user.user_id}.")
                 except IntegrityError as e:
-                    # Логируем ошибку и продолжаем выполнение
-                    logger.error(f"Ошибка при создании уведомления для пользователя {instance.user_id}: {e}")
+                    logger.error(f"Ошибка при создании уведомления: {e}")
+        except sender.DoesNotExist:
+            # Если объект не существует (например, при создании), ничего не делаем
+            pass
 
 @receiver(pre_save, sender=Appeal)
 def track_appeal_status_change(sender, instance, **kwargs):
