@@ -1,10 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+// Функция для проверки, нужно ли показывать навбар
+const shouldShowNavbar = computed(() => {
+  const excludedPaths = ['/error', ]; // Список путей, где навбар не нужен
+  return !excludedPaths.includes(route.path);
+});
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-900 text-white">
     <!-- Навигационное меню -->
-    <nav class="bg-gray-800 shadow-md p-4">
+    <nav v-if="shouldShowNavbar" class="bg-gray-800 shadow-md p-4">
       <div class="container mx-auto flex justify-between items-center">
         <!-- Логотип -->
         <div class="text-lg font-bold text-blue-400">MP BOT DOCKER</div>

@@ -1,7 +1,5 @@
-from django.http import HttpResponseRedirect, HttpResponseBadRequest, HttpResponseForbidden
-from django.shortcuts import redirect
-import redis
-from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponseForbidden
+
 
 def redirect_to_frontend(request, token):
     """
@@ -12,7 +10,7 @@ def redirect_to_frontend(request, token):
         return HttpResponseForbidden("Доступ запрещён. Токен отсутствует.")
 
     # Формируем URL для редиректа на фронтенд
-    frontend_url = f"http://localhost:5175/account?token={token}"
+    frontend_url = f"http://localhost:5173/account?token={token}"
 
     # Выполняем редирект
     return HttpResponseRedirect(frontend_url)
