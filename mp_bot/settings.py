@@ -146,15 +146,22 @@ REDIS_DB = config('REDIS_DB')
 # Логирование
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': False,  # Не отключаем существующие логгеры
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',  # Используем форматтер
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
         },
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'INFO',  # Уровень логирования
     },
 }
 
