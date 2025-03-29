@@ -139,7 +139,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Настройка Redis DB
 
-REDIS_HOST = config('REDIS_HOST')
+REDIS_HOST = config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')
 REDIS_PORT = config('REDIS_PORT')
 REDIS_DB = config('REDIS_DB')
 

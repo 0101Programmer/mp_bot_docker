@@ -23,3 +23,20 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Добавляем хост для подключения к БД
     command: ["python", "manage.py", "runbot"]
+
+  frontend:
+    build:
+      context: ./mp-bot-docker-frontend
+    container_name: vue_frontend_dev
+    ports:
+      - "5173:5173"  # Проброс порта 5173 из контейнера на хост
+    depends_on:
+      - web
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"  # Проброс порта Redis на хостовую машину
+    restart: always
