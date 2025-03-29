@@ -6,7 +6,7 @@ const route = useRoute();
 
 // Функция для проверки, нужно ли показывать навбар
 const shouldShowNavbar = computed(() => {
-  const excludedPaths = ['/error', ]; // Список путей, где навбар не нужен
+  const excludedPaths = ['/error', '/', ]; // Список путей, где навбар не нужен
   return !excludedPaths.includes(route.path);
 });
 </script>

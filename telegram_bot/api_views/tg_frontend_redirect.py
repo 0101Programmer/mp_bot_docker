@@ -9,8 +9,8 @@ def redirect_to_frontend(request, token):
     if not token:
         return HttpResponseForbidden("Доступ запрещён. Токен отсутствует.")
 
-    # Формируем URL для редиректа на фронтенд
-    frontend_url = f"http://localhost:5173/account?token={token}"
+    # Формируем URL для редиректа на стартовую страницу фронтенда
+    frontend_url = f"http://localhost:5173/?token={token}"
 
     # Выполняем редирект
     return HttpResponseRedirect(frontend_url)
