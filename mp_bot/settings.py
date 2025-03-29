@@ -175,3 +175,7 @@ INSTALLED_APPS += [
 ]
 
 MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
+
+# Добавьте путь к папке uploads
+MEDIA_URL = '/uploads/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')

@@ -76,7 +76,17 @@ onMounted(() => {
             <td class="px-6 py-4">{{ appeal.id }}</td>
             <td class="px-6 py-4">{{ appeal.appeal_text }}</td>
             <td class="px-6 py-4">{{ appeal.contact_info || '-' }}</td>
-            <td class="px-6 py-4">{{ appeal.file_path ? 'Есть файл' : 'Нет файла' }}</td>
+            <td class="px-6 py-4">
+              <a
+                v-if="appeal.file_path"
+                :href="`http://localhost:8000/telegram_bot/download/${appeal.file_path.split('/').pop()}`"
+                class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                target="_blank"
+              >
+                Скачать файл
+              </a>
+              <span v-else>Нет файла</span>
+            </td>
             <td class="px-6 py-4">{{ appeal.status }}</td>
           </tr>
         </tbody>
