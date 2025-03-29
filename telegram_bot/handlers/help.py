@@ -11,4 +11,5 @@ async def cmd_help(message: Message):
     await message.answer("Список доступных команд:\n"
                          "/start - Начать работу\n"
                          "/help - Получить помощь\n"
+                         "/account - Личный веб-кабинет\n"
                          "/admin - Команды администратора")
