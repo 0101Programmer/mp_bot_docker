@@ -118,12 +118,14 @@ onMounted(async () => {
         <tbody>
           <tr v-for="appeal in appeals" :key="appeal.id" class="border-b border-gray-700 hover:bg-gray-700">
             <td class="px-6 py-4">{{ appeal.id }}</td>
-            <td class="px-6 py-4">{{ appeal.appeal_text }}</td>
+            <td class="px-6 py-4 max-w-[300px] break-words whitespace-normal">
+              {{ appeal.appeal_text }}
+            </td>
             <td class="px-6 py-4">{{ appeal.contact_info || '-' }}</td>
             <td class="px-6 py-4">
               <a
                 v-if="appeal.file_path"
-                :href="`http://localhost:8000/telegram_bot/download/${appeal.file_path.split('/').pop()}`"
+                :href="`http://localhost:8000/telegram_bot/download/${appeal.id}`"
                 class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
                 target="_blank"
               >

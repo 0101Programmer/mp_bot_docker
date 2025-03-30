@@ -1,18 +1,27 @@
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from django.http import FileResponse, HttpResponseNotFound
 import os
 from django.conf import settings
 
-class DownloadFileView(APIView):
-    def get(self, request, file_name):
-        # Полный путь к файлу
-        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+from ..models import Appeal
 
-        # Проверяем, существует ли файл
-        if os.path.exists(file_path):
-            # Возвращаем файл как ответ
-            return FileResponse(open(file_path, 'rb'), as_attachment=True)
-        else:
-            # Если файл не найден, возвращаем ошибку 404
-            return HttpResponseNotFound("Файл не найден.")
+
+class DownloadFileView(APIView):
+    # permission_classes = [AllowAny]  # Разрешаем доступ без аутентификации
+
+    def get(self, request, appeal_id):
+        try:
+            # Находим обращение по ID
+            appeal = Appeal.objects.get(id=appeal_id)
+
+            # Проверяем, существует ли файл
+            if appeal.file_path and appeal.file_path.storage.exists(appeal.file_path.name):
+                # Возвращаем файл как ответ
+                return FileResponse(appeal.file_path.open('rb'), as_attachment=True)
+            else:
+                # Если файл не найден, возвращаем ошибку 404
+                return HttpResponseNotFound("Файл не найден.")
+        except Appeal.DoesNotExist:
+            return HttpResponseNotFound("Обращение не найдено.")

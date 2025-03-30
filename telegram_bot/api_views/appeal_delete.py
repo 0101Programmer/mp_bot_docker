@@ -1,8 +1,11 @@
+import logging
 import os
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Appeal
+
+logger = logging.getLogger(__name__)
 
 class DeleteAppealView(APIView):
 
@@ -13,18 +16,36 @@ class DeleteAppealView(APIView):
             if not user_id:
                 return Response({"error": "user_id is required"}, status=400)
 
+            # Преобразуем user_id в целое число
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                return Response({"error": "user_id must be an integer"}, status=400)
+
             # Находим обращение по ID и user_id
-            appeal = Appeal.objects.get(id=appeal_id, user_id=user_id)
+            try:
+                appeal = Appeal.objects.get(id=appeal_id, user_id=user_id)
+            except Appeal.DoesNotExist:
+                return Response({"error": "Обращение не найдено."}, status=404)
 
             # Удаляем связанный файл, если он существует
             if appeal.file_path:
-                file_path = os.path.join(settings.BASE_DIR, appeal.file_path)
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                try:
+                    # Удаляем файл через метод delete() FileField
+                    appeal.file_path.delete(save=False)
+                except Exception as e:
+                    logger.error(f"Ошибка при удалении файла: {str(e)}")
+                    # Можно игнорировать ошибку или вернуть предупреждение
+                    return Response({
+                        "message": "Обращение удалено, но файл не был удален.",
+                        "details": str(e)
+                    })
 
             # Удаляем обращение из базы данных
             appeal.delete()
 
             return Response({"message": "Обращение успешно удалено."})
-        except Appeal.DoesNotExist:
-            return Response({"error": "Обращение не найдено."}, status=404)
+
+        except Exception as e:
+            logger.error("Error:", str(e))  # Логируем ошибку
+            return Response({"error": f"Ошибка при удалении обращения: {str(e)}"}, status=500)

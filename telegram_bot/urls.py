@@ -15,7 +15,7 @@ urlpatterns = [
     path('frontend_redirect_url/<str:token>/', redirect_to_frontend, name='redirect_to_frontend'),
     path('appeals/', AppealListView.as_view(), name='appeal-list'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('download/<str:file_name>/', DownloadFileView.as_view(), name='download_file'),
+    path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
 ]
