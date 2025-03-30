@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '../stores/userStore';
-import { useRouter } from 'vue-router';
+import {onMounted, ref} from 'vue';
+import {useUserStore} from '../stores/userStore';
+import {useRouter} from 'vue-router';
 
 // Инициализируем хранилище и роутер
 const userStore = useUserStore();
@@ -50,39 +50,43 @@ const deleteAppeal = async (appealId: number) => {
   }
 };
 
-// Проверяем, есть ли данные пользователя в хранилище
-if (!userStore.userData) {
-  console.error('Данные пользователя не найдены.');
-  router.push('/error?message=Данные пользователя не найдены');
-}
-
 // Функция для загрузки данных через API
-onMounted(() => {
-  const userId = userStore.userData.user_id; // Получаем user_id из хранилища
-  fetch(`http://localhost:8000/telegram_bot/appeals/?user_id=${userId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Ошибка при получении данных.');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      appeals.value = data;
-    })
-    .catch((error) => {
-      console.error('Ошибка:', error.message);
-      router.push(`/error?message=${encodeURIComponent(error.message)}`);
-    })
-    .finally(() => {
-      isLoading.value = false;
+onMounted(async () => {
+  try {
+    // Если токена нет, перенаправляем на страницу ошибки
+    if (!userStore.authToken) {
+      throw new Error('Токен отсутствует. Пожалуйста, авторизуйтесь.');
+    }
+
+    // Если данные пользователя отсутствуют, загружаем их
+    if (!userStore.userData) {
+      await userStore.loadUserData();
+    }
+
+    // Загружаем список обращений
+    const userId = userStore.userData.user_id; // Получаем user_id из хранилища
+    const response = await fetch(`http://localhost:8000/telegram_bot/appeals/?user_id=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Ошибка при получении данных.');
+    }
+
+    appeals.value = await response.json();
+  } catch (error) {
+    console.error('Ошибка:', error.message);
+    await router.push(`/error?message=${encodeURIComponent(error.message)}`);
+  } finally {
+    isLoading.value = false; // Завершаем загрузку
+  }
 });
 </script>
+
 <template>
   <div class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-start p-4">
     <!-- Приветственное сообщение -->

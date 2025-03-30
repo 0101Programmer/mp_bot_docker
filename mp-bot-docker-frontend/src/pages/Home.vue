@@ -13,6 +13,7 @@ const isLoading = ref(true);
 // Функция для загрузки данных через API
 onMounted(() => {
   const token = new URLSearchParams(window.location.search).get('token'); // Получаем токен из URL
+
   if (!token) {
     console.error('Токен не найден в URL.');
     router.push('/error?message=Токен отсутствует');
@@ -20,37 +21,13 @@ onMounted(() => {
     return;
   }
 
-  fetch(`http://localhost:8000/telegram_bot/get_user_data/${token}/`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        // Если статус не 200, парсим ошибку и перенаправляем на страницу с ошибкой
-        return response.json().then((errorData) => {
-          throw new Error(errorData.message || 'Произошла ошибка при получении данных.');
-        });
-      }
-      return response.json();
-    })
-    .then((userData) => {
-      console.log('Полученные данные пользователя:', userData);
-
-      // Сохраняем данные в хранилище
-      userStore.setUserData(userData);
-
-      // Перенаправляем на страницу /account
-      router.push('/account');
-    })
-    .catch((error) => {
-      console.error('Ошибка при получении данных:', error.message);
-      router.push(`/error?message=${encodeURIComponent(error.message)}`);
-    })
-    .finally(() => {
-      isLoading.value = false;
-    });
+  // Сохраняем токен в localStorage и загружаем данные пользователя
+  localStorage.setItem('authToken', token);
+  userStore.setAuthToken(token);
+  userStore.loadUserData().finally(() => {
+    isLoading.value = false;
+    router.push('/account');
+  });
 });
 </script>
 

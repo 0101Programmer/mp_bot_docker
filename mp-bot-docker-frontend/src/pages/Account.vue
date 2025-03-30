@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useUserStore } from '../stores/userStore';
 import { useRouter } from 'vue-router';
 
@@ -6,11 +7,28 @@ import { useRouter } from 'vue-router';
 const userStore = useUserStore();
 const router = useRouter();
 
-// Проверяем, есть ли данные пользователя в хранилище
-if (!userStore.userData) {
-  console.error('Данные пользователя не найдены.');
-  router.push('/error?message=Данные пользователя не найдены');
-}
+// Состояние для загрузки данных
+const isLoading = ref(true);
+
+// Функция для загрузки данных пользователя
+onMounted(async () => {
+  try {
+    // Если токена нет, перенаправляем на страницу ошибки
+    if (!userStore.authToken) {
+      throw new Error('Токен отсутствует. Пожалуйста, авторизуйтесь.');
+    }
+
+    // Если данные пользователя отсутствуют, загружаем их
+    if (!userStore.userData) {
+      await userStore.loadUserData();
+    }
+  } catch (error) {
+    console.error('Ошибка:', error.message);
+    await router.push(`/error?message=${encodeURIComponent(error.message)}`);
+  } finally {
+    isLoading.value = false; // Завершаем загрузку
+  }
+});
 </script>
 
 <template>
@@ -20,8 +38,13 @@ if (!userStore.userData) {
       Личный кабинет
     </h1>
 
+    <!-- Если данные загружаются -->
+    <div v-if="isLoading" class="text-gray-400">
+      Загрузка данных...
+    </div>
+
     <!-- Если данные загружены -->
-    <div v-if="userStore.userData" class="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+    <div v-else-if="userStore.userData" class="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg overflow-hidden">
       <table class="w-full text-sm text-left text-gray-400">
         <!-- Заголовок таблицы -->
         <thead class="text-xs uppercase bg-gray-700 text-gray-300">
