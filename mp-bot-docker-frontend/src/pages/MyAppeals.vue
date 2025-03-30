@@ -11,6 +11,45 @@ const router = useRouter();
 const isLoading = ref(true);
 const appeals = ref([]);
 
+// Функция для подтверждения удаления
+const confirmDelete = (appealId: number) => {
+  const isConfirmed = confirm(
+    "Удаление обращения очистит всю его историю, а также отзовёт его, в случае, если оно не было обработано. Вы уверены?"
+  );
+  if (isConfirmed) {
+    deleteAppeal(appealId);
+  }
+};
+
+// Функция для удаления обращения
+const deleteAppeal = async (appealId: number) => {
+  try {
+    // Получаем user_id из хранилища
+    const userId = userStore.userData?.user_id;
+    if (!userId) {
+      throw new Error('User ID не найден.');
+    }
+
+    // Отправляем запрос на удаление с user_id
+    const response = await fetch(`http://localhost:8000/telegram_bot/appeal/${appealId}/delete/?user_id=${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при удалении обращения.');
+    }
+
+    // Удаляем обращение из списка на фронтенде
+    appeals.value = appeals.value.filter((appeal) => appeal.id !== appealId);
+  } catch (error) {
+    console.error('Ошибка:', error.message);
+    alert(`Ошибка при удалении обращения: ${error.message}`);
+  }
+};
+
 // Проверяем, есть ли данные пользователя в хранилище
 if (!userStore.userData) {
   console.error('Данные пользователя не найдены.');
@@ -67,6 +106,7 @@ onMounted(() => {
             <th scope="col" class="px-6 py-3">Контактная информация</th>
             <th scope="col" class="px-6 py-3">Файл</th>
             <th scope="col" class="px-6 py-3">Статус</th>
+            <th scope="col" class="px-6 py-3">Действия</th>
           </tr>
         </thead>
 
@@ -88,6 +128,14 @@ onMounted(() => {
               <span v-else>Нет файла</span>
             </td>
             <td class="px-6 py-4">{{ appeal.status }}</td>
+            <td class="px-6 py-4">
+              <button
+                @click="confirmDelete(appeal.id)"
+                class="text-red-500 hover:text-red-400 transition-colors duration-200"
+              >
+                Удалить
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
