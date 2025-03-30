@@ -4,6 +4,7 @@ import ErrorPage from '../pages/ErrorPage.vue';
 import Home from '../pages/Home.vue';
 import MyAppeals from "../pages/MyAppeals.vue";
 import Success from "../pages/Success.vue";
+import CreateAppeal from "../pages/CreateAppeal.vue";
 
 
 const routes = [
@@ -15,6 +16,11 @@ const routes = [
   path: '/success',
   name: 'Success',
   component: Success,
+  },
+  {
+  path: '/create_appeal',
+  name: 'CreateAppeal',
+  component: CreateAppeal,
   },
 ];
 

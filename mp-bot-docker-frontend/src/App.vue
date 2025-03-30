@@ -76,6 +76,14 @@ const logout = async () => {
               Мои обращения
             </router-link>
           </li>
+          <li>
+            <router-link
+              to="/create_appeal"
+              class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
+            >
+              Написать обращение
+            </router-link>
+          </li>
         </ul>
 
         <!-- Кнопка выхода -->

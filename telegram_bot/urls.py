@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
+from telegram_bot.api_views.comissions.get_comissions import CommissionListView
 from telegram_bot.api_views.file_downloader import DownloadFileView
 from telegram_bot.api_views.get_appeals import AppealListView
 from telegram_bot.api_views.logout_endpoint import LogoutView
@@ -18,6 +19,8 @@ urlpatterns = [
     path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
+    path('commissions/', CommissionListView.as_view(), name='commission-list'),
+
 ]
 
 # Добавляем маршрут для медиафайлов (только в режиме разработки)
