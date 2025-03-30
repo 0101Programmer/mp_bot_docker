@@ -24,7 +24,7 @@ class Appeal(models.Model):
     commission = models.ForeignKey(CommissionInfo, on_delete=models.SET_NULL, null=True)
     appeal_text = models.TextField()
     contact_info = models.CharField(max_length=255, null=True, blank=True)
-    file_path = models.CharField(max_length=1024, null=True, blank=True)
+    file_path = models.FileField(upload_to='uploads/', null=True, blank=True)
     status = models.CharField(max_length=255, default='Новое')
 
     def __str__(self):

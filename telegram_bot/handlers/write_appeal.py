@@ -6,6 +6,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import re
+from django.core.files import File
 
 import logging
 import os
@@ -18,18 +19,20 @@ EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 PHONE_PATTERN = r'^\+7\d{10}$'  # Российский номер в международном формате: +7XXXXXXXXXX
 
 # Функция для сохранения обращения в базу данных
-async def save_appeal_to_db(data, telegram_id):
-    user = await sync_to_async(User.objects.get)(telegram_id=telegram_id)
-    commission = await sync_to_async(CommissionInfo.objects.get)(id=data["commission_id"])
+@sync_to_async
+def save_appeal_to_db(data, telegram_id, django_file=None, original_file_name=None):
+    user = User.objects.get(telegram_id=telegram_id)
+    commission = CommissionInfo.objects.get(id=data["commission_id"])
     appeal = Appeal(
         user=user,
         commission=commission,
         appeal_text=data["appeal_text"],
         contact_info=data.get("contact_info"),
-        file_path=data.get("file_path"),
         status="Новое"
     )
-    await sync_to_async(appeal.save)()
+    if django_file and original_file_name:
+        appeal.file_path.save(original_file_name, django_file)  # Сохраняем файл через FileField
+    appeal.save()
 
 # Создаем класс для хранения состояний
 class AppealForm(StatesGroup):
@@ -234,40 +237,43 @@ async def handle_invalid_file(message: Message):
 @router.message(AppealForm.attaching_file, F.photo | F.document)
 async def process_file_upload(message: Message, state: FSMContext):
     try:
-        # Инициализируем переменную file_path
-        file_path = None
-
-        # Сохраняем файл
-        file_dir = "uploads/"
-        os.makedirs(file_dir, exist_ok=True)
-
+        # Определяем тип файла (фото или документ)
         if message.photo:
             # Получаем информацию о фото
             file_id = message.photo[-1].file_id
             file = await message.bot.get_file(file_id)
             file_extension = ".jpg"  # Фото всегда сохраняем как .jpg
-            file_type = "photo"
+            original_file_name = f"{message.from_user.id}_photo{file_extension}"
 
         elif message.document:
             # Получаем информацию о документе
             file_id = message.document.file_id
             file = await message.bot.get_file(file_id)
-            file_extension = os.path.splitext(message.document.file_name)[-1]  # Расширение файла
-            file_type = "file"
+            original_file_name = message.document.file_name
 
-        # Формируем уникальное имя файла
-        unique_file_name = f"{message.from_user.id}_{file_type}_{file_id}{file_extension}"
-        file_path = os.path.join(file_dir, unique_file_name)
+        else:
+            await message.answer("Пожалуйста, отправьте фото или документ.")
+            return
 
-        # Скачиваем файл
-        await message.bot.download_file(file.file_path, file_path)
+        # Путь к временной папке
+        temp_dir = os.path.join(os.getcwd(), 'tmp')
+        os.makedirs(temp_dir, exist_ok=True)  # Создаем папку tmp, если её нет
 
-        # Обновляем состояние с путём к файлу
-        await state.update_data(file_path=file_path)
+        # Полный путь к временному файлу
+        temp_file_path = os.path.join(temp_dir, original_file_name)
 
-        # Сохраняем данные в базу данных
-        data = await state.get_data()
-        await save_appeal_to_db(data, message.from_user.id)
+        # Скачиваем файл во временную папку
+        await message.bot.download_file(file.file_path, temp_file_path)
+
+        # Открываем временный файл для загрузки через Django
+        with open(temp_file_path, 'rb') as f:
+            django_file = File(f)
+            # Сохраняем данные в базу данных
+            data = await state.get_data()
+            await save_appeal_to_db(data, message.from_user.id, django_file, original_file_name)
+
+        # Удаляем временный файл после использования
+        os.remove(temp_file_path)
 
         # Отправляем сообщение об успешной отправке обращения
         await message.answer("Ваше обращение успешно отправлено!")
@@ -276,6 +282,7 @@ async def process_file_upload(message: Message, state: FSMContext):
     except Exception as e:
         logger.error(f"Ошибка при загрузке файла: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
 
 # Обработчик inline-кнопки "Пропустить загрузку файла"
 @router.callback_query(AppealForm.attaching_file, F.data == "skip_file")

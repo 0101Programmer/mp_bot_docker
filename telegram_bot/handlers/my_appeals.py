@@ -37,13 +37,8 @@ async def track_appeal_status(message: Message):
                 # Получаем название комиссии через sync_to_async
                 commission_name = await sync_to_async(lambda: appeal.commission.name if appeal.commission else "Комиссия не указана")()
 
-                # Проверяем наличие прикрепленного файла или фото
-                file_info = ""
-                if appeal.file_path:
-                    if "_file_" in appeal.file_path:
-                        file_info = "Есть прикрепленный документ.\n"
-                    elif "_photo_" in appeal.file_path:
-                        file_info = "Есть прикрепленное фото.\n"
+                # Проверяем наличие прикрепленного файла
+                file_info = "Есть прикрепленный документ.\n" if appeal.file_path else ""
 
                 response = (
                     f"Обращение: {preview_text}\n"
@@ -76,6 +71,7 @@ async def track_appeal_status(message: Message):
         logger.error(f"Ошибка при отслеживании статусов обращений: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
+
 # Обработчик для кнопки "Посмотреть файл"
 @router.callback_query(F.data.startswith("view_file:"))
 async def view_file(callback_query: CallbackQuery):
@@ -87,9 +83,10 @@ async def view_file(callback_query: CallbackQuery):
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
         # Проверяем, существует ли файл
-        if appeal.file_path and os.path.exists(appeal.file_path):
+        if appeal.file_path and appeal.file_path.storage.exists(appeal.file_path.name):
             # Отправляем файл пользователю
-            file = FSInputFile(appeal.file_path)
+            file_path = appeal.file_path.path  # Полный путь к файлу
+            file = FSInputFile(file_path)
             await callback_query.message.answer_document(file)
         else:
             # Если файл не найден, отправляем сообщение об ошибке
@@ -104,9 +101,10 @@ async def view_file(callback_query: CallbackQuery):
         logger.error(f"Ошибка при просмотре файла: {e}")
         await callback_query.answer("Произошла ошибка. Пожалуйста, попробуйте позже.", show_alert=True)
 
+
 # Обработчик нажатия на кнопку "Показать полностью"
-@router.callback_query(lambda query: query.data.startswith("show_full"))
-async def show_full_appeal(callback):
+@router.callback_query(F.data.startswith("show_full:"))
+async def show_full_appeal(callback: CallbackQuery):
     try:
         # Извлекаем ID обращения из callback_data
         appeal_id = int(callback.data.split(":")[1])
@@ -119,13 +117,8 @@ async def show_full_appeal(callback):
             lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
         )()
 
-        # Проверяем наличие прикрепленного файла или фото
-        file_info = ""
-        if appeal.file_path:
-            if "_file_" in appeal.file_path:
-                file_info = "Есть прикрепленный документ.\n"
-            elif "_photo_" in appeal.file_path:
-                file_info = "Есть прикрепленное фото.\n"
+        # Проверяем наличие прикрепленного файла
+        file_info = "Есть прикрепленный документ.\n" if appeal.file_path else ""
 
         # Формируем ответ с полным текстом обращения
         full_response = (
@@ -160,7 +153,7 @@ async def show_full_appeal(callback):
 
 
 # Обработчик нажатия на кнопку "Свернуть"
-@router.callback_query(lambda query: query.data.startswith("collapse"))
+@router.callback_query(F.data.startswith("collapse:"))
 async def collapse_appeal(callback: CallbackQuery):
     try:
         # Извлекаем ID обращения из callback_data
@@ -177,13 +170,8 @@ async def collapse_appeal(callback: CallbackQuery):
             lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
         )()
 
-        # Проверяем наличие прикрепленного файла или фото
-        file_info = ""
-        if appeal.file_path:
-            if "_file_" in appeal.file_path:
-                file_info = "Есть прикрепленный документ.\n"
-            elif "_photo_" in appeal.file_path:
-                file_info = "Есть прикрепленное фото.\n"
+        # Проверяем наличие прикрепленного файла
+        file_info = "Есть прикрепленный документ.\n" if appeal.file_path else ""
 
         # Формируем ответ с сокращённым текстом
         collapsed_response = (
@@ -216,6 +204,7 @@ async def collapse_appeal(callback: CallbackQuery):
     except Exception as e:
         logger.error(f"Ошибка при сворачивании текста обращения: {e}")
         await callback.answer("Произошла ошибка. Пожалуйста, попробуйте позже.", show_alert=True)
+
 
 # Обработчик нажатия на кнопку "Удалить"
 @router.callback_query(F.data.startswith("delete_appeal:"))
@@ -252,12 +241,12 @@ async def delete_appeal(callback_query):
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
         # Проверяем, есть ли прикреплённый файл
-        if appeal.file_path and os.path.exists(appeal.file_path):
+        if appeal.file_path:
+            # Удаляем файл с диска через storage (если он существует)
             try:
-                # Удаляем файл с диска
-                os.remove(appeal.file_path)
+                await sync_to_async(appeal.file_path.storage.delete)(appeal.file_path.name)
             except Exception as e:
-                logger.error(f"Ошибка при удалении файла {appeal.file_path}: {e}")
+                logger.error(f"Ошибка при удалении файла {appeal.file_path.name}: {e}")
 
         # Удаляем обращение из базы данных
         await sync_to_async(Appeal.objects.filter(id=appeal_id).delete)()
@@ -286,13 +275,8 @@ async def cancel_delete_appeal(callback_query: CallbackQuery):
             lambda: appeal.commission.name if appeal.commission else "Комиссия не указана"
         )()
 
-        # Проверяем наличие прикрепленного файла или фото
-        file_info = ""
-        if appeal.file_path:
-            if "_file_" in appeal.file_path:
-                file_info = "Есть прикрепленный документ.\n"
-            elif "_photo_" in appeal.file_path:
-                file_info = "Есть прикрепленное фото.\n"
+        # Проверяем наличие прикрепленного файла
+        file_info = "Есть прикрепленный документ.\n" if appeal.file_path else ""
 
         # Ограничиваем длину текста для предварительного просмотра
         preview_text = appeal.appeal_text[:100] + "..." if len(appeal.appeal_text) > 250 else appeal.appeal_text
