@@ -92,6 +92,14 @@ const logout = async () => {
               Информация о комиссиях
             </router-link>
           </li>
+          <li>
+            <router-link
+              to="/admin_panel"
+              class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
+            >
+              Панель администратора
+            </router-link>
+          </li>
         </ul>
 
         <!-- Кнопка выхода -->
