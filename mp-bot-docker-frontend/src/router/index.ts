@@ -5,6 +5,7 @@ import Home from '../pages/Home.vue';
 import MyAppeals from "../pages/MyAppeals.vue";
 import Success from "../pages/Success.vue";
 import CreateAppeal from "../pages/CreateAppeal.vue";
+import CommissionsInfo from "../pages/CommissionsInfo.vue";
 
 
 const routes = [
@@ -21,6 +22,11 @@ const routes = [
   path: '/create_appeal',
   name: 'CreateAppeal',
   component: CreateAppeal,
+  },
+  {
+  path: '/commissions_info',
+  name: 'CommissionsInfo',
+  component: CommissionsInfo,
   },
 ];
 
