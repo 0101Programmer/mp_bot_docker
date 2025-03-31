@@ -10,6 +10,7 @@ import AdminPanel from "../pages/AdminPanel.vue";
 import CreateCommission from "../pages/admin/commissions/CreateCommission.vue";
 import DeleteCommission from "../pages/admin/commissions/DeleteCommission.vue";
 import UpdateCommission from "../pages/admin/commissions/UpdateCommission.vue";
+import GetUpdateDeleteAppeal from "../pages/admin/appeals/GetUpdateDeleteAppeal.vue";
 
 
 const routes = [
@@ -51,6 +52,11 @@ const routes = [
   path: '/edit_commission/:id',
   name: 'UpdateCommission',
   component: UpdateCommission
+  },
+  {
+  path: '/get_update_delete_appeal',
+  name: 'GetUpdateDeleteAppeal',
+  component: GetUpdateDeleteAppeal
   },
 ];
 

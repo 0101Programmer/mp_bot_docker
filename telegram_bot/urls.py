@@ -4,6 +4,8 @@ from django.conf.urls.static import static
 
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
+from telegram_bot.api_views.appeals.get_update_delete_appeal import AppealListForAdminView, DeleteAppealForAdminView, \
+    UpdateAppealStatusView
 from telegram_bot.api_views.comissions.create_commission import CreateCommissionView
 from telegram_bot.api_views.comissions.delete_commission import DeleteCommissionView
 from telegram_bot.api_views.comissions.get_comissions import CommissionListView
@@ -21,11 +23,18 @@ urlpatterns = [
     path('frontend_redirect_url/<str:token>/', redirect_to_frontend, name='redirect_to_frontend'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('delete_user/<int:user_id>/', DeleteUserView.as_view(), name='delete_user'),
-    # api обращений
+
+    # api обращений для пользователя
     path('appeals/', AppealListView.as_view(), name='appeal-list'),
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
     path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
+
+    # api обращений для администратора
+    path('admin/appeals/', AppealListForAdminView.as_view(), name='admin-appeal-list'),
+    path('admin/update_appeal_status/<int:appeal_id>/', UpdateAppealStatusView.as_view(), name='admin-update-appeal-status'),
+    path('admin/delete_appeal/<int:appeal_id>/', DeleteAppealForAdminView.as_view(), name='admin-delete-appeal'),
+
     # api комиссий
     path('commissions/', CommissionListView.as_view(), name='commission-list'),
     path('create_commission/', CreateCommissionView.as_view(), name='create-commission'),

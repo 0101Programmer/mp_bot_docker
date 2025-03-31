@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
 class AppealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appeal
-        fields = ['id', 'user', 'commission', 'appeal_text', 'contact_info', 'file_path']
+        fields = ['id', 'user', 'commission', 'appeal_text', 'contact_info', 'file_path', 'status']
 
     def validate_appeal_text(self, value):
         if len(value) < 100:
@@ -34,6 +34,10 @@ class AppealSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Комиссия не указана.")
         return value
 
+class AppealSerializerForAdmin(serializers.ModelSerializer):
+    class Meta:
+        model = Appeal
+        fields =  '__all__'
 
 class CommissionInfoSerializer(serializers.ModelSerializer):
     class Meta:

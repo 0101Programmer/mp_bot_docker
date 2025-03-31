@@ -40,7 +40,7 @@
           </a>
         </li>
         <li>
-          <a href="#" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">
+          <a href="/get_update_delete_appeal" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">
             Просмотр обращений
           </a>
         </li>
