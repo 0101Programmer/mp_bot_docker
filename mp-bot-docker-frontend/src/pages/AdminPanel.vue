@@ -27,7 +27,7 @@
                 </a>
               </li>
               <li>
-                <a href="#" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
+                <a href="#" @click.prevent="openModal" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
                   Редактировать комиссию
                 </a>
               </li>
@@ -65,16 +65,110 @@
         на получение прав администратора.
       </p>
     </div>
+
+    <!-- Модальное окно -->
+    <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-xl font-bold text-blue-400 mb-4">Выберите комиссию для редактирования</h2>
+
+        <!-- Выбор комиссии из выпадающего списка -->
+        <div class="mb-4">
+          <label for="commission_select" class="block text-sm font-medium text-gray-300">Выберите комиссию</label>
+          <select
+            id="commission_select"
+            v-model="selectedCommissionId"
+            class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="" disabled selected>Выберите комиссию</option>
+            <option v-for="commission in commissions" :key="commission.id" :value="commission.id">
+              {{ commission.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Ввод ID комиссии -->
+        <div class="mb-4">
+          <label for="commission_id" class="block text-sm font-medium text-gray-300">Или введите ID комиссии</label>
+          <input
+            id="commission_id"
+            v-model="manualCommissionId"
+            type="number"
+            class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Введите ID комиссии"
+          />
+        </div>
+
+        <!-- Кнопки модального окна -->
+        <div class="flex justify-end space-x-2">
+          <button
+            @click="closeModal"
+            class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 transition-colors duration-200"
+          >
+            Отмена
+          </button>
+          <button
+            @click="redirectToEditPage"
+            class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition-colors duration-200"
+          >
+            Перейти к редактированию
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 
-// Инициализируем хранилище пользователя
+// Инициализируем хранилище пользователя и роутер
 const userStore = useUserStore();
+const router = useRouter();
 
 // Проверка, является ли пользователь администратором
 const isAdmin = computed(() => userStore.userData?.is_admin || false);
+
+// Состояния для полей формы и модального окна
+const commissions = ref<{ id: string; name: string }[]>([]);
+const selectedCommissionId = ref<string | null>(null);
+const manualCommissionId = ref<string>('');
+const isModalOpen = ref(false);
+
+// Загрузка списка комиссий
+onMounted(async () => {
+  try {
+    const response = await fetch('http://localhost:8000/telegram_bot/commissions/');
+    if (response.ok) {
+      commissions.value = await response.json();
+    } else {
+      console.error('Ошибка при загрузке комиссий');
+    }
+  } catch (error) {
+    console.error('Ошибка сети:', error);
+  }
+});
+
+// Открытие модального окна
+const openModal = () => {
+  isModalOpen.value = true;
+};
+
+// Закрытие модального окна
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+// Переход на страницу редактирования
+const redirectToEditPage = () => {
+  const commissionId = selectedCommissionId.value || manualCommissionId.value;
+  if (!commissionId) {
+    alert('Пожалуйста, выберите комиссию или введите её ID.');
+    return;
+  }
+
+  // Перенаправляем на страницу редактирования
+  router.push(`/edit_commission/${commissionId}`);
+};
 </script>

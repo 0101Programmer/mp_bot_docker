@@ -7,6 +7,7 @@ from telegram_bot.api_views.appeal_delete import DeleteAppealView
 from telegram_bot.api_views.comissions.create_commission import CreateCommissionView
 from telegram_bot.api_views.comissions.delete_commission import DeleteCommissionView
 from telegram_bot.api_views.comissions.get_comissions import CommissionListView
+from telegram_bot.api_views.comissions.get_update_commission import CommissionDetailView, UpdateCommissionView
 from telegram_bot.api_views.file_downloader import DownloadFileView
 from telegram_bot.api_views.get_appeals import AppealListView
 from telegram_bot.api_views.logout_endpoint import LogoutView
@@ -27,6 +28,9 @@ urlpatterns = [
     path('commissions/', CommissionListView.as_view(), name='commission-list'),
     path('create_commission/', CreateCommissionView.as_view(), name='create-commission'),
     path('delete_commission/<int:commission_id>/', DeleteCommissionView.as_view(), name='delete-commission'),
+    path('commission_detail/<int:commission_id>/', CommissionDetailView.as_view(), name='commission-detail'),
+    path('update_commission/<int:commission_id>/', UpdateCommissionView.as_view(), name='update-commission'),
+
 ]
 
 # Добавляем маршрут для медиафайлов (только в режиме разработки)
