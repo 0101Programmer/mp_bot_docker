@@ -22,7 +22,7 @@
                 </a>
               </li>
               <li>
-                <a href="#" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
+                <a href="/delete_commission" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
                   Удалить комиссию
                 </a>
               </li>

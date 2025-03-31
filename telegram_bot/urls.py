@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
 from telegram_bot.api_views.comissions.create_commission import CreateCommissionView
+from telegram_bot.api_views.comissions.delete_commission import DeleteCommissionView
 from telegram_bot.api_views.comissions.get_comissions import CommissionListView
 from telegram_bot.api_views.file_downloader import DownloadFileView
 from telegram_bot.api_views.get_appeals import AppealListView
@@ -13,16 +14,19 @@ from telegram_bot.api_views.tg_frontend_redirect import redirect_to_frontend
 from telegram_bot.api_views.get_user_data import UserDataView
 
 urlpatterns = [
+    # api для взаимодействия с пользователем
     path('get_user_data/<str:token>/', UserDataView.as_view(), name='user_data'),
     path('frontend_redirect_url/<str:token>/', redirect_to_frontend, name='redirect_to_frontend'),
-    path('appeals/', AppealListView.as_view(), name='appeal-list'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
+    # api обращений
+    path('appeals/', AppealListView.as_view(), name='appeal-list'),
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
+    path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
+    # api комиссий
     path('commissions/', CommissionListView.as_view(), name='commission-list'),
     path('create_commission/', CreateCommissionView.as_view(), name='create-commission'),
-
+    path('delete_commission/<int:commission_id>/', DeleteCommissionView.as_view(), name='delete-commission'),
 ]
 
 # Добавляем маршрут для медиафайлов (только в режиме разработки)

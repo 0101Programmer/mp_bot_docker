@@ -8,6 +8,7 @@ import CreateAppeal from "../pages/CreateAppeal.vue";
 import CommissionsInfo from "../pages/CommissionsInfo.vue";
 import AdminPanel from "../pages/AdminPanel.vue";
 import CreateCommission from "../pages/admin/commissions/CreateCommission.vue";
+import DeleteCommission from "../pages/admin/commissions/DeleteCommission.vue";
 
 
 const routes = [
@@ -39,6 +40,11 @@ const routes = [
   path: '/create_commission',
   name: 'CreateCommission',
   component: CreateCommission
+  },
+  {
+  path: '/delete_commission',
+  name: 'DeleteCommission',
+  component: DeleteCommission
   },
 ];
 
