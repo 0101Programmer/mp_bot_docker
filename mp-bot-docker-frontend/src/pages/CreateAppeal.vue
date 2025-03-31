@@ -19,7 +19,7 @@
     </div>
 
     <!-- Форма для создания обращения -->
-    <form @submit.prevent="submitAppeal" class="w-full max-w-2xl bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6">
+    <form v-if="!isEmptyCommissions" @submit.prevent="submitAppeal" class="w-full max-w-2xl bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6">
       <!-- Поле для текста обращения -->
       <div class="mb-4">
         <label for="appeal_text" class="block text-sm font-medium text-gray-300">Текст обращения</label>
@@ -86,13 +86,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from "../stores/userStore.ts";
 
 const userStore = useUserStore();
 const router = useRouter();
 
+// Состояния для полей формы
 const appealText = ref('');
 const contactInfo = ref('');
 const file = ref<File | null>(null);
@@ -100,6 +101,9 @@ const selectedCommission = ref<string | null>(null);
 const commissions = ref<{ id: string; name: string; description: string }[]>([]);
 const errors = ref<any>({});
 const isLoading = ref(false);
+
+// Флаг "нет комиссий"
+const isEmptyCommissions = computed(() => commissions.value.length === 0);
 
 onMounted(async () => {
   try {
@@ -122,7 +126,7 @@ const handleFileUpload = (event: Event) => {
 };
 
 const submitAppeal = async () => {
-  errors.value = {};
+  errors.value = {}; // Очищаем предыдущие ошибки
   isLoading.value = true;
 
   try {
