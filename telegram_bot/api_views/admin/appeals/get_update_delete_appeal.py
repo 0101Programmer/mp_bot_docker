@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from ...models import Appeal
-from ...serializers import AppealSerializerForAdmin
-from ...tools.check_admin_status import is_user_admin
+from ....models import Appeal
+from ....serializers import AppealSerializerForAdmin
+from ....tools.check_admin_status import is_user_admin
 
 class AppealListForAdminView(APIView):
 
@@ -55,5 +55,16 @@ class DeleteAppealForAdminView(APIView):
         except Appeal.DoesNotExist:
             raise NotFound("Обращение с указанным ID не найдено.")
 
+        # Удаляем связанный файл, если он существует
+        if appeal.file_path:
+            try:
+                # Удаляем файл с диска
+                appeal.file_path.delete(save=False)
+            except Exception as e:
+                # Логируем ошибку, но продолжаем выполнение
+                print(f"Ошибка при удалении файла: {e}")
+
+        # Удаляем обращение из базы данных
         appeal.delete()
+
         return Response({"message": "Обращение успешно удалено."}, status=200)

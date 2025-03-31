@@ -9,7 +9,7 @@ from ..models import Appeal
 
 
 class DownloadFileView(APIView):
-    # permission_classes = [AllowAny]  # Разрешаем доступ без аутентификации
+    permission_classes = [AllowAny]  # Разрешаем доступ без аутентификации
 
     def get(self, request, appeal_id):
         try:

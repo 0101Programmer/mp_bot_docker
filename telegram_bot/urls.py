@@ -4,18 +4,18 @@ from django.conf.urls.static import static
 
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
-from telegram_bot.api_views.appeals.get_update_delete_appeal import AppealListForAdminView, DeleteAppealForAdminView, \
+from telegram_bot.api_views.admin.appeals.get_update_delete_appeal import AppealListForAdminView, DeleteAppealForAdminView, \
     UpdateAppealStatusView
-from telegram_bot.api_views.comissions.create_commission import CreateCommissionView
-from telegram_bot.api_views.comissions.delete_commission import DeleteCommissionView
-from telegram_bot.api_views.comissions.get_comissions import CommissionListView
-from telegram_bot.api_views.comissions.get_update_commission import CommissionDetailView, UpdateCommissionView
+from telegram_bot.api_views.admin.comissions.create_commission import CreateCommissionView
+from telegram_bot.api_views.admin.comissions.delete_commission import DeleteCommissionView
+from telegram_bot.api_views.admin.comissions.get_comissions import CommissionListView
+from telegram_bot.api_views.admin.comissions.get_update_commission import CommissionDetailView, UpdateCommissionView
 from telegram_bot.api_views.file_downloader import DownloadFileView
 from telegram_bot.api_views.get_appeals import AppealListView
 from telegram_bot.api_views.logout_endpoint import LogoutView
 from telegram_bot.api_views.tg_frontend_redirect import redirect_to_frontend
 from telegram_bot.api_views.get_user_data import UserDataView
-from telegram_bot.api_views.users.delete_user import DeleteUserView
+from telegram_bot.api_views.admin.users.delete_user import DeleteUserView
 
 urlpatterns = [
     # api для взаимодействия с пользователем

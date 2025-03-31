@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
-from ...models import CommissionInfo
-from ...serializers import CommissionInfoWriteSerializer
-from ...tools.check_admin_status import is_user_admin
+from ....models import CommissionInfo
+from ....serializers import CommissionInfoWriteSerializer
+from ....tools.check_admin_status import is_user_admin
 
 
 class CreateCommissionView(APIView):

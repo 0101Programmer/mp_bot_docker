@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from ...models import CommissionInfo
-from ...serializers import CommissionInfoSerializer
+from ....models import CommissionInfo
+from ....serializers import CommissionInfoSerializer
 
 class CommissionListView(APIView):
     def get(self, request):
