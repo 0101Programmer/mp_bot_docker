@@ -9,10 +9,30 @@
     <div v-if="isAdmin" class="w-full max-w-2xl bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6">
       <h2 class="text-xl font-bold text-blue-400 mb-4">Доступные действия:</h2>
       <ul class="space-y-3">
+        <!-- Выпадающий список для действий с комиссиями -->
         <li>
-          <a href="#" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">
-            Действия с комиссиями
-          </a>
+          <details class="block w-full">
+            <summary class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200 cursor-pointer">
+              Действия с комиссиями
+            </summary>
+            <ul class="mt-2 space-y-2 pl-4">
+              <li>
+                <a href="/create_commission" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
+                  Создать комиссию
+                </a>
+              </li>
+              <li>
+                <a href="#" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
+                  Удалить комиссию
+                </a>
+              </li>
+              <li>
+                <a href="#" class="block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-md transition-colors duration-200">
+                  Редактировать комиссию
+                </a>
+              </li>
+            </ul>
+          </details>
         </li>
         <li>
           <a href="#" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">

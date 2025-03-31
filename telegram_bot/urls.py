@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
+from telegram_bot.api_views.comissions.create_commission import CreateCommissionView
 from telegram_bot.api_views.comissions.get_comissions import CommissionListView
 from telegram_bot.api_views.file_downloader import DownloadFileView
 from telegram_bot.api_views.get_appeals import AppealListView
@@ -20,6 +21,7 @@ urlpatterns = [
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
     path('commissions/', CommissionListView.as_view(), name='commission-list'),
+    path('create_commission/', CreateCommissionView.as_view(), name='create-commission'),
 
 ]
 

@@ -40,3 +40,12 @@ class CommissionInfoSerializer(serializers.ModelSerializer):
         model = CommissionInfo
         fields = ['id', 'name', 'description']
 
+
+# Сериализатор для создания/обновления комиссий (POST/PUT-запросы)
+class CommissionInfoWriteSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True, allow_blank=False)  # Обязательное поле
+    description = serializers.CharField(required=True, allow_blank=False)  # Обязательное поле
+
+    class Meta:
+        model = CommissionInfo
+        fields = ['id', 'name', 'description']
