@@ -35,8 +35,8 @@
           </details>
         </li>
         <li>
-          <a href="#" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">
-            Действия с пользователями
+          <a href="#" @click.prevent="openDeleteUserModal" class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-md transition-colors duration-200">
+            Удалить пользователя
           </a>
         </li>
         <li>
@@ -66,7 +66,7 @@
       </p>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно для редактирования комиссии -->
     <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h2 class="text-xl font-bold text-blue-400 mb-4">Выберите комиссию для редактирования</h2>
@@ -115,6 +115,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Модальное окно для удаления пользователя -->
+    <div v-if="isDeleteUserModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-xl font-bold text-red-400 mb-4">Удаление пользователя</h2>
+
+        <!-- Ввод ID пользователя -->
+        <div class="mb-4">
+          <label for="user_id" class="block text-sm font-medium text-gray-300">Введите ID пользователя</label>
+          <input
+            id="user_id"
+            v-model.number="manualUserId"
+            type="number"
+            class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="Введите ID пользователя"
+          />
+        </div>
+
+        <!-- Кнопки модального окна -->
+        <div class="flex justify-end space-x-2">
+          <button
+            @click="closeDeleteUserModal"
+            class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 transition-colors duration-200"
+          >
+            Отмена
+          </button>
+          <button
+            @click="deleteUser"
+            class="px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors duration-200"
+          >
+            Удалить пользователя
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -130,11 +165,15 @@ const router = useRouter();
 // Проверка, является ли пользователь администратором
 const isAdmin = computed(() => userStore.userData?.is_admin || false);
 
-// Состояния для полей формы и модального окна
+// Состояния для модального окна редактирования комиссии
 const commissions = ref<{ id: string; name: string }[]>([]);
 const selectedCommissionId = ref<string | null>(null);
 const manualCommissionId = ref<string>('');
 const isModalOpen = ref(false);
+
+// Состояния для модального окна удаления пользователя
+const isDeleteUserModalOpen = ref(false);
+const manualUserId = ref<number | null>(null); // ID пользователя теперь число
 
 // Загрузка списка комиссий
 onMounted(async () => {
@@ -150,17 +189,17 @@ onMounted(async () => {
   }
 });
 
-// Открытие модального окна
+// Открытие модального окна для редактирования комиссии
 const openModal = () => {
   isModalOpen.value = true;
 };
 
-// Закрытие модального окна
+// Закрытие модального окна для редактирования комиссии
 const closeModal = () => {
   isModalOpen.value = false;
 };
 
-// Переход на страницу редактирования
+// Переход на страницу редактирования комиссии
 const redirectToEditPage = () => {
   const commissionId = selectedCommissionId.value || manualCommissionId.value;
   if (!commissionId) {
@@ -170,5 +209,47 @@ const redirectToEditPage = () => {
 
   // Перенаправляем на страницу редактирования
   router.push(`/edit_commission/${commissionId}`);
+  closeModal();
+};
+
+// Открытие модального окна для удаления пользователя
+const openDeleteUserModal = () => {
+  isDeleteUserModalOpen.value = true;
+};
+
+// Закрытие модального окна для удаления пользователя
+const closeDeleteUserModal = () => {
+  isDeleteUserModalOpen.value = false;
+};
+
+// Удаление пользователя
+const deleteUser = async () => {
+  const userId = manualUserId.value; // ID пользователя уже число
+  if (!userId) {
+    alert('Пожалуйста, введите ID пользователя.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8000/telegram_bot/delete_user/${userId}/`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        admin_id: userStore.userData?.user_id, // Передаем ID администратора для проверки прав
+      }),
+    });
+
+    if (response.ok) {
+      alert('Пользователь успешно удален.');
+      closeDeleteUserModal();
+    } else {
+      const errorData = await response.json(); // Извлекаем данные об ошибке
+      const errorMessage = errorData.detail || errorData.message || 'Произошла ошибка при удалении пользователя.';
+      alert(errorMessage); // Выводим конкретное сообщение об ошибке
+    }
+  } catch (error) {
+    console.error('Ошибка:', error.message);
+    alert(`Ошибка при удалении пользователя: ${error.message}`);
+  }
 };
 </script>
