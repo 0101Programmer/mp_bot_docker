@@ -64,18 +64,21 @@ async def process_user_id(message: Message, state: FSMContext):
     # Создаем клавиатуру с кнопками
     builder = InlineKeyboardBuilder()
 
-    # Кнопки для редактирования полей
-    builder.add(InlineKeyboardButton(text="Редактировать имя", callback_data=f"edit_first_name"))
-    builder.add(InlineKeyboardButton(text="Редактировать фамилию", callback_data=f"edit_last_name"))
-
-    # Кнопка для изменения статуса админа (если это не текущий пользователь)
     current_user_id = message.from_user.id  # Telegram ID текущего пользователя
+
+    # Кнопка для изменения статуса админа (если это не текущий пользователь и он является админом)
     if user.telegram_id != current_user_id and user.is_admin:
-        builder.add(InlineKeyboardButton(text="Снять статус администратора", callback_data=f"remove_admin"))
+        builder.add(InlineKeyboardButton(
+            text="Снять статус администратора",
+            callback_data=f"remove_admin"
+        ))
 
     # Кнопка для удаления пользователя (если это не текущий пользователь)
     if user.telegram_id != current_user_id:
-        builder.add(InlineKeyboardButton(text="Удалить пользователя", callback_data=f"delete_user"))
+        builder.add(InlineKeyboardButton(
+            text="Удалить пользователя",
+            callback_data=f"delete_user"
+        ))
 
     # Устанавливаем кнопки друг под другом
     builder.adjust(1)
@@ -85,7 +88,6 @@ async def process_user_id(message: Message, state: FSMContext):
 
     # Переходим в состояние ожидания выбора действия
     await state.set_state(UserAction.editing_field)
-
 
 # Обработчик нажатий на кнопки
 @router.callback_query(UserAction.editing_field)
@@ -103,13 +105,7 @@ async def process_action(callback: CallbackQuery, state: FSMContext):
         return
 
     try:
-        if action == "edit_first_name":
-            await callback.message.answer("Введите новое имя:")
-            await state.update_data(editing_field="first_name")
-        elif action == "edit_last_name":
-            await callback.message.answer("Введите новую фамилию:")
-            await state.update_data(editing_field="last_name")
-        elif action == "remove_admin":
+        if action == "remove_admin":
             # Снимаем статус админа
             user.is_admin = False
 
@@ -130,7 +126,9 @@ async def process_action(callback: CallbackQuery, state: FSMContext):
                 "Статус админа успешно снят. Все связанные запросы на админку обновлены.",
                 reply_markup=None  # Убираем клавиатуру
             )
+
         elif action == "delete_user":
+            # Удаляем пользователя
             await sync_to_async(user.delete)()
             await callback.message.edit_text(
                 "Пользователь успешно удален.",
@@ -150,44 +148,3 @@ async def process_action(callback: CallbackQuery, state: FSMContext):
 
         # Убираем клавиатуру, чтобы кнопка не "зависала"
         await callback.message.edit_reply_markup(reply_markup=None)
-
-
-# Обработчик ввода нового значения для поля
-@router.message(UserAction.editing_field)
-async def process_edit_field(message: Message, state: FSMContext):
-    new_value = message.text.strip()
-    data = await state.get_data()
-    field = data.get("editing_field")
-    user_id = data.get("selected_user_id")
-
-    # Проверяем, что есть поле для редактирования и ID пользователя
-    if not field or not user_id:
-        await message.answer("Произошла ошибка. Пожалуйста, начните сначала.")
-        await state.clear()  # Завершаем состояние
-        return
-
-    # Получаем пользователя из базы данных
-    user = await sync_to_async(User.objects.filter(user_id=user_id).first)()
-
-    if not user:
-        await message.answer("Пользователь не найден. Попробуйте снова.")
-        await state.clear()  # Завершаем состояние
-        return
-
-    # Обновляем поле
-    if field == "first_name":
-        user.first_name = new_value
-    elif field == "last_name":
-        user.last_name = new_value
-    else:
-        await message.answer("Некорректное поле для редактирования. Пожалуйста, начните сначала.")
-        await state.clear()  # Завершаем состояние
-        return
-
-    await sync_to_async(user.save)()
-
-    # Отправляем уведомление об успешном обновлении
-    await message.answer(f"Поле '{field}' успешно обновлено.")
-
-    # Очищаем состояние
-    await state.clear()
