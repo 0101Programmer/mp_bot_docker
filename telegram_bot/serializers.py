@@ -1,7 +1,7 @@
 import re
 
 from rest_framework import serializers
-from .models import User, Appeal, CommissionInfo
+from .models import User, Appeal, CommissionInfo, AdminRequest
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -53,3 +53,14 @@ class CommissionInfoWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommissionInfo
         fields = ['id', 'name', 'description']
+
+class AdminRequestSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdminRequest
+        fields = ['id', 'user', 'admin_position', 'timestamp', 'status', 'comment']
+
+    def get_user(self, obj):
+        # Возвращаем только username пользователя
+        return {'username': obj.user.username}

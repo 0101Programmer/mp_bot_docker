@@ -2,6 +2,8 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
+from telegram_bot.api_views.admin.admin_requests.get_update_delete_admin_requests import AdminRequestListView, \
+    UpdateAdminRequestStatusView, DeleteAdminRequestView
 from telegram_bot.api_views.appeal_create import CreateAppealView
 from telegram_bot.api_views.appeal_delete import DeleteAppealView
 from telegram_bot.api_views.admin.appeals.get_update_delete_appeal import AppealListForAdminView, DeleteAppealForAdminView, \
@@ -30,7 +32,7 @@ urlpatterns = [
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
     path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
 
-    # api обращений для администратора
+    # api обращений (для администратора)
     path('admin/appeals/', AppealListForAdminView.as_view(), name='admin-appeal-list'),
     path('admin/update_appeal_status/<int:appeal_id>/', UpdateAppealStatusView.as_view(), name='admin-update-appeal-status'),
     path('admin/delete_appeal/<int:appeal_id>/', DeleteAppealForAdminView.as_view(), name='admin-delete-appeal'),
@@ -41,6 +43,12 @@ urlpatterns = [
     path('delete_commission/<int:commission_id>/', DeleteCommissionView.as_view(), name='delete-commission'),
     path('commission_detail/<int:commission_id>/', CommissionDetailView.as_view(), name='commission-detail'),
     path('update_commission/<int:commission_id>/', UpdateCommissionView.as_view(), name='update-commission'),
+
+    # api запросов на получение прав администратора (для администратора)
+    path('api/v1/admin/admin_requests/', AdminRequestListView.as_view(), name='admin-request-list'),
+    path('api/v1/admin/update_admin_request_status/<int:request_id>/', UpdateAdminRequestStatusView.as_view(),
+         name='update-admin-request-status'),
+    path('api/v1/admin/delete_admin_request/<int:request_id>/', DeleteAdminRequestView.as_view(), name='delete-admin-request'),
 
 ]
 
