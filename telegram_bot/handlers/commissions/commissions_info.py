@@ -3,6 +3,7 @@ from aiogram import Router, F
 from asgiref.sync import sync_to_async
 import logging
 from ...models import CommissionInfo  # Импортируем модель CommissionInfo
+from ...tools.check_is_registred import get_user_by_telegram_id
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,15 @@ router = Router()
 # Обработчик текста "Описание комиссий"
 @router.message(F.text == "Описание комиссий")
 async def show_commissions(message: Message):
+    # Получаем Telegram ID пользователя
+    telegram_id = message.from_user.id
+
+    # Проверяем, зарегистрирован ли пользователь
+    user = await get_user_by_telegram_id(telegram_id)
+    if not user:
+        await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
+        return
+
     try:
         # Получаем все комиссии из базы данных
         commissions = await sync_to_async(list)(CommissionInfo.objects.all())
