@@ -10,7 +10,7 @@ from django.core.files import File
 
 import logging
 import os
-from ..models import CommissionInfo, Appeal, User
+from ...models import CommissionInfo, Appeal, User
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import Router, F
 from asgiref.sync import sync_to_async
 import logging
-from ..models import CommissionInfo  # Импортируем модель CommissionInfo
+from ...models import CommissionInfo  # Импортируем модель CommissionInfo
 
 logger = logging.getLogger(__name__)
 

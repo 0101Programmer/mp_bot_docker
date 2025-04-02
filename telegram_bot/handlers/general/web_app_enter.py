@@ -1,10 +1,9 @@
-# bot_handlers.py
 import logging
 
 from aiogram import Router, F
 from aiogram.types import Message
-from ..models import User
-from ..tools.secret_token_generator import generate_token
+from ...models import User
+from ...tools.secret_token_generator import generate_token
 from aiogram.filters.command import Command
 from asgiref.sync import sync_to_async
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup

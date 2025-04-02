@@ -4,20 +4,19 @@ import asyncio
 import logging
 from django.conf import settings
 
-from telegram_bot.handlers import admin_commands_package
-from telegram_bot.handlers.start import router as start_router
-from telegram_bot.handlers.help import router as help_router
-from telegram_bot.handlers.other import router as other_router
-from telegram_bot.handlers.my_appeals import router as my_appeals_router
-from telegram_bot.handlers.commissions_info import router as commissions_info_router
-from telegram_bot.handlers.write_appeal import router as write_appeal_router
-from telegram_bot.handlers.admin_commands import router as admin_commands_router
-from telegram_bot.handlers.admin_appeal import router as admin_appeal_router
-from telegram_bot.handlers.admin_commands_package.manage_commission import router as manage_commissions_router
-from telegram_bot.handlers.admin_commands_package.manage_admin_requests import router as manage_admin_requests_router
-from telegram_bot.handlers.admin_commands_package.manage_appeals import router as manage_appeals_router
-from telegram_bot.handlers.admin_commands_package.manage_users import router as manage_users_router
-from telegram_bot.handlers.web_app_enter import router as web_app_enter_router
+from telegram_bot.handlers.general.start import router as start_router
+from telegram_bot.handlers.general.help import router as help_router
+from telegram_bot.handlers.general.other import router as other_router
+from telegram_bot.handlers.appeals.my_appeals import router as my_appeals_router
+from telegram_bot.handlers.commissions.commissions_info import router as commissions_info_router
+from telegram_bot.handlers.appeals.write_appeal import router as write_appeal_router
+from telegram_bot.handlers.admin_commands.general_admin_commands import router as admin_commands_router
+from telegram_bot.handlers.admin_requests.admin_appeal import router as admin_appeal_router
+from telegram_bot.handlers.admin_commands.manage_commission import router as manage_commissions_router
+from telegram_bot.handlers.admin_commands.manage_admin_requests import router as manage_admin_requests_router
+from telegram_bot.handlers.admin_commands.manage_appeals import router as manage_appeals_router
+from telegram_bot.handlers.admin_commands.manage_users import router as manage_users_router
+from telegram_bot.handlers.general.web_app_enter import router as web_app_enter_router
 
 from .tools.notifier_func import start_notification_task
 

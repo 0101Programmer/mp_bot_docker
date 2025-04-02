@@ -4,9 +4,9 @@ from aiogram import Router
 from asgiref.sync import sync_to_async
 
 # Импорт Django-моделей
-from ..models import User, Appeal, CommissionInfo, Notification, AdminRequest
+from ...models import User, Appeal, CommissionInfo, Notification, AdminRequest
 
-from ..keyboards.start_kb import start_keyboard
+from ...keyboards.start_kb import start_keyboard
 
 # Инициализация роутера
 router = Router()

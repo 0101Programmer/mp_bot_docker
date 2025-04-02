@@ -3,7 +3,7 @@ from aiogram import Router, F
 from asgiref.sync import sync_to_async
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import os
-from ..models import User, Appeal  # Импортируем модели User и Appeal
+from ...models import User, Appeal  # Импортируем модели User и Appeal
 import logging  # Импортируем модуль logging
 from aiogram.types import FSInputFile
 

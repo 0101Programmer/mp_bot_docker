@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 
-from ..models import AdminRequest, User
+from ...models import AdminRequest, User
 
 # Создаем роутер для обработки команд
 router = Router()
