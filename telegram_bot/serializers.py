@@ -64,3 +64,24 @@ class AdminRequestSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         # Возвращаем только username пользователя
         return {'username': obj.user.username}
+
+class AdminRequestCreateSerializer(serializers.Serializer):
+    """
+    Сериализатор для создания заявки на получение админ-прав.
+    """
+    user_id = serializers.IntegerField(required=True)
+    admin_position = serializers.CharField(required=True)
+
+    def validate(self, data):
+        # Проверяем, существует ли пользователь
+        user_id = data.get('user_id')
+        try:
+            user = User.objects.get(user_id=user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Пользователь с указанным user_id не найден.")
+
+        # Проверяем, что пользователь не является администратором
+        if user.is_admin:
+            raise serializers.ValidationError("Пользователь уже является администратором.")
+
+        return data

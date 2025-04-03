@@ -59,7 +59,7 @@
       </p>
       <p class="text-gray-500 text-sm">
         Вы можете
-        <a href="#" class="text-blue-400 underline hover:text-blue-500 transition-colors duration-200">
+        <a href="/sent_admin_request" class="text-blue-400 underline hover:text-blue-500 transition-colors duration-200">
           заполнить форму
         </a>
         на получение прав администратора.

@@ -18,6 +18,8 @@ from telegram_bot.api_views.logout_endpoint import LogoutView
 from telegram_bot.api_views.tg_frontend_redirect import redirect_to_frontend
 from telegram_bot.api_views.get_user_data import UserDataView
 from telegram_bot.api_views.admin.users.delete_user import DeleteUserView
+from telegram_bot.api_views.user.get_admin_requests import CheckPendingRequest
+from telegram_bot.api_views.user.sent_admin_request import SentAdminRequest
 
 urlpatterns = [
     # api для взаимодействия с пользователем
@@ -31,6 +33,10 @@ urlpatterns = [
     path('appeal/<int:appeal_id>/delete/', DeleteAppealView.as_view(), name='delete_appeal'),
     path('appeal_create/', CreateAppealView.as_view(), name='create_appeal'),
     path('download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
+
+    # api запросов на получение прав администратора (для пользователя)
+    path('api/v1/user/admin-request/', SentAdminRequest.as_view(), name='sent_admin_request'),
+    path('api/v1/user/admin-request/check-pending/<str:user_id>/', CheckPendingRequest.as_view(), name='check_pending_request'),
 
     # api обращений (для администратора)
     path('admin/appeals/', AppealListForAdminView.as_view(), name='admin-appeal-list'),

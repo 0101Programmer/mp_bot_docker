@@ -12,6 +12,7 @@ import DeleteCommission from "../pages/admin/commissions/DeleteCommission.vue";
 import UpdateCommission from "../pages/admin/commissions/UpdateCommission.vue";
 import GetUpdateDeleteAppeal from "../pages/admin/appeals/GetUpdateDeleteAppeal.vue";
 import GetUpdateDeleteRequest from "../pages/admin/admin_requests/GetUpdateDeleteRequest.vue";
+import SentAdminRequest from "../pages/SentAdminRequest.vue";
 
 
 const routes = [
@@ -63,6 +64,11 @@ const routes = [
   path: '/get_update_delete_admin_requests',
   name: 'GetUpdateDeleteRequest',
   component: GetUpdateDeleteRequest
+  },
+  {
+  path: '/sent_admin_request',
+  name: 'SentAdminRequest',
+  component: SentAdminRequest
   },
 ];
 
