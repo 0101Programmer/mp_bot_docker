@@ -17,6 +17,13 @@
 
     <!-- Форма для отправки заявки -->
     <form v-else @submit.prevent="submitForm" class="w-full max-w-md bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6">
+      <!-- Если есть отклонённая заявка, показываем сообщение -->
+      <div v-if="lastRejectedRequest" class="mb-4 text-gray-400">
+        Ваша предыдущая заявка на должность "{{ lastRejectedRequest.admin_position }}" была отклонена.
+        <br />
+        Комментарий администратора: {{ lastRejectedRequest.comment }}
+      </div>
+
       <!-- Поле для ввода должности -->
       <div class="mb-4">
         <label for="admin_position" class="block text-sm font-medium text-gray-300 mb-2">
@@ -66,16 +73,21 @@ interface UserData {
 
 interface CheckPendingResponse {
   has_pending_request: boolean;
+  last_rejected_request: {
+    admin_position: string;
+    comment: string;
+  } | null;
 }
 
 const userStore = useUserStore();
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const hasPendingRequest = ref(false);
+const lastRejectedRequest = ref<{ admin_position: string; comment: string } | null>(null);
 const errorMessage = ref('');
 const formData = ref<{ admin_position: string }>({ admin_position: '' });
 
-// Проверка наличия активной заявки при загрузке компонента
+// Проверка наличия активной или отклонённой заявки при загрузке компонента
 async function checkPendingRequest() {
   try {
     isLoading.value = true;
@@ -91,9 +103,11 @@ async function checkPendingRequest() {
     }
 
     const response = await axios.get<CheckPendingResponse>(
-      `http://localhost:8000/telegram_bot/api/v1/user/admin-request/check-pending/${userStore.userData.user_id}`
+      `http://localhost:8000/telegram_bot/api/v1/user/admin-request/check-pending-rejected/${userStore.userData.user_id}`
     );
+
     hasPendingRequest.value = response.data.has_pending_request;
+    lastRejectedRequest.value = response.data.last_rejected_request;
   } catch (error) {
     console.error('Ошибка при проверке активной заявки:', error);
     errorMessage.value = 'Не удалось проверить наличие активной заявки.';
