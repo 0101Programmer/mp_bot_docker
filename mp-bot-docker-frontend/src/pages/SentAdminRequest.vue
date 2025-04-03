@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useUserStore } from '@/stores/userStore';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
 import axios from 'axios';
 
 // Определяем типы
@@ -80,6 +81,7 @@ interface CheckPendingResponse {
 }
 
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Получаем доступ к хранилищу конфигурации
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const hasPendingRequest = ref(false);
@@ -88,7 +90,7 @@ const errorMessage = ref('');
 const formData = ref<{ admin_position: string }>({ admin_position: '' });
 
 // Проверка наличия активной или отклонённой заявки при загрузке компонента
-async function checkPendingRequest() {
+async function checkPendingRejectedRequest() {
   try {
     isLoading.value = true;
 
@@ -103,7 +105,7 @@ async function checkPendingRequest() {
     }
 
     const response = await axios.get<CheckPendingResponse>(
-      `http://localhost:8000/telegram_bot/api/v1/user/admin-request/check-pending-rejected/${userStore.userData.user_id}`
+      `${configStore.backendBaseUrl}/api/v1/user/admin-request/check-pending-rejected/${userStore.userData.user_id}` // Используем backendBaseUrl
     );
 
     hasPendingRequest.value = response.data.has_pending_request;
@@ -136,10 +138,13 @@ async function submitForm() {
       return;
     }
 
-    const response = await axios.post('http://localhost:8000/telegram_bot/api/v1/user/admin-request/', {
-      user_id: userStore.userData.user_id,
-      admin_position: formData.value.admin_position,
-    });
+    const response = await axios.post(
+      `${configStore.backendBaseUrl}/api/v1/user/admin-request/`, // Используем backendBaseUrl
+      {
+        user_id: userStore.userData.user_id,
+        admin_position: formData.value.admin_position,
+      }
+    );
 
     if (response.status === 201) {
       formData.value.admin_position = ''; // Очищаем поле
@@ -155,5 +160,5 @@ async function submitForm() {
 }
 
 // Инициализация
-checkPendingRequest();
+checkPendingRejectedRequest();
 </script>

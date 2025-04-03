@@ -88,9 +88,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from "../stores/userStore.ts";
+import { useUserStore } from "@/stores/userStore.ts";
+import { useConfigStore } from "@/stores/configStore.ts"; // Импортируем хранилище конфигурации
 
+// Инициализируем хранилища
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Получаем доступ к хранилищу конфигурации
 const router = useRouter();
 
 // Состояния для полей формы
@@ -107,7 +110,7 @@ const isEmptyCommissions = computed(() => commissions.value.length === 0);
 
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:8000/telegram_bot/commissions/');
+    const response = await fetch(`${configStore.backendBaseUrl}/commissions/`); // Используем backendBaseUrl
     if (response.ok) {
       commissions.value = await response.json();
     } else {
@@ -137,7 +140,7 @@ const submitAppeal = async () => {
     if (contactInfo.value) formData.append('contact_info', contactInfo.value);
     if (file.value) formData.append('file', file.value);
 
-    const response = await fetch('http://localhost:8000/telegram_bot/appeal_create/', {
+    const response = await fetch(`${configStore.backendBaseUrl}/appeal_create/`, { // Используем backendBaseUrl
       method: 'POST',
       body: formData,
     });

@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
+import { useConfigStore } from './configStore';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    userData: null as any | null, // Данные пользователя
-    authToken: null as string | null, // Токен авторизации
+    userData: null as any | null,
+    authToken: null as string | null,
   }),
   actions: {
     setUserData(data: any) {
@@ -15,7 +16,7 @@ export const useUserStore = defineStore('user', {
     clearUserData() {
       this.userData = null;
       this.authToken = null;
-      localStorage.removeItem('authToken'); // Удаляем токен из localStorage
+      localStorage.removeItem('authToken');
     },
     async loadUserData() {
       if (!this.authToken) {
@@ -24,7 +25,10 @@ export const useUserStore = defineStore('user', {
       }
 
       try {
-        const response = await fetch(`http://localhost:8000/telegram_bot/get_user_data/${this.authToken}/`, {
+        const configStore = useConfigStore();
+        const backendUrl = `${configStore.backendBaseUrl}/get_user_data/${this.authToken}/`;
+
+        const response = await fetch(backendUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -37,10 +41,10 @@ export const useUserStore = defineStore('user', {
         }
 
         const userData = await response.json();
-        this.setUserData(userData); // Сохраняем данные пользователя
+        this.setUserData(userData);
       } catch (error) {
         console.error('Ошибка при загрузке данных пользователя:', error.message);
-        this.clearUserData(); // Очищаем данные, если произошла ошибка
+        this.clearUserData();
       }
     },
   },

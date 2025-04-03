@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue';
-import {useUserStore} from '../stores/userStore';
-import {useRouter} from 'vue-router';
+import { onMounted, ref } from 'vue';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
 
 // Инициализируем хранилище и роутер
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Получаем доступ к хранилищу конфигурации
 const router = useRouter();
 
 // Состояние для загрузки данных
@@ -31,7 +33,7 @@ const deleteAppeal = async (appealId: number) => {
     }
 
     // Отправляем запрос на удаление с user_id
-    const response = await fetch(`http://localhost:8000/telegram_bot/appeal/${appealId}/delete/?user_id=${userId}`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/appeal/${appealId}/delete/?user_id=${userId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -65,7 +67,7 @@ onMounted(async () => {
 
     // Загружаем список обращений
     const userId = userStore.userData.user_id; // Получаем user_id из хранилища
-    const response = await fetch(`http://localhost:8000/telegram_bot/appeals/?user_id=${userId}`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/appeals/?user_id=${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
