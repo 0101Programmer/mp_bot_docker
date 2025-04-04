@@ -30,6 +30,8 @@ services:
     container_name: vue_frontend_dev
     ports:
       - "5173:5173"  # Проброс порта 5173 из контейнера на хост
+    env_file:
+      - .env
     depends_on:
       - web
     restart: always
