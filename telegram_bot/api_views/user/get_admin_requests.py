@@ -2,25 +2,23 @@ import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from ...models import AdminRequest
+from ...models import AdminRequest, User
 
 logger = logging.getLogger(__name__)
 
-import logging
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from ...models import AdminRequest
-
-logger = logging.getLogger(__name__)
-
-class CheckPendingRejectedRequest(APIView):
+class CheckPendingRejectedAcceptedRequest(APIView):
     """
     Проверяет, есть ли у пользователя активная или отклонённая заявка на получение админ-прав.
     """
 
     def get(self, request, user_id, *args, **kwargs):
         try:
+            # Получаем пользователя
+            user = User.objects.filter(user_id=user_id).first()
+            if not user:
+                return Response({'detail': 'Пользователь не найден.'}, status=404)
+
             # Проверяем наличие активной заявки
             has_pending_request = AdminRequest.objects.filter(user_id=user_id, status='pending').exists()
 
@@ -35,6 +33,7 @@ class CheckPendingRejectedRequest(APIView):
             response_data = {
                 'has_pending_request': has_pending_request,
                 'last_rejected_request': None,
+                'is_admin': user.is_admin,  # Добавляем флаг is_admin
             }
 
             if rejected_request:

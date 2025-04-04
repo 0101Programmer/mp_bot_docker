@@ -10,6 +10,12 @@
       Отправка данных...
     </div>
 
+    <!-- Если пользователь уже администратор -->
+    <div v-else-if="is_admin" class="text-gray-400">
+      Ваша заявка была одобрена.
+      <a href="/admin_panel" class="text-blue-500 hover:underline">Перейдите</a> на вкладку для администраторов или обновите приложение с главной страницы.
+    </div>
+
     <!-- Если есть активная заявка -->
     <div v-else-if="hasPendingRequest" class="text-gray-400">
       У вас уже есть активная заявка на рассмотрении.
@@ -88,6 +94,7 @@ const hasPendingRequest = ref(false);
 const lastRejectedRequest = ref<{ admin_position: string; comment: string } | null>(null);
 const errorMessage = ref('');
 const formData = ref<{ admin_position: string }>({ admin_position: '' });
+const is_admin = ref(false);
 
 // Проверка наличия активной или отклонённой заявки при загрузке компонента
 async function checkPendingRejectedRequest() {
@@ -105,11 +112,12 @@ async function checkPendingRejectedRequest() {
     }
 
     const response = await axios.get<CheckPendingResponse>(
-      `${configStore.backendBaseUrl}/api/v1/user/admin-request/check-pending-rejected/${userStore.userData.user_id}` // Используем backendBaseUrl
+      `${configStore.backendBaseUrl}/api/v1/user/admin-request/check-pending-rejected-accepted/${userStore.userData.user_id}`
     );
 
     hasPendingRequest.value = response.data.has_pending_request;
     lastRejectedRequest.value = response.data.last_rejected_request;
+    is_admin.value = response.data.is_admin; // Сохраняем значение is_admin
   } catch (error) {
     console.error('Ошибка при проверке активной заявки:', error);
     errorMessage.value = 'Не удалось проверить наличие активной заявки.';
