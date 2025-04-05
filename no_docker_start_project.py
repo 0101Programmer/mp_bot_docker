@@ -1,8 +1,8 @@
-import subprocess
-import sys
 import asyncio
 import os
-from signal import SIGTERM
+import subprocess
+import sys
+
 
 # === ФУНКЦИЯ ДЛЯ ЗАПУСКА КОМАНДЫ ===
 def run_command(command, cwd=None):

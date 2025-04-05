@@ -27,8 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
 
-
-
+# Настройка для авто-создания суперпользователя
+DJANGO_SUPERUSER_NAME = config('DJANGO_SUPERUSER_NAME')
+DJANGO_SUPERUSER_PASSWORD = config('DJANGO_SUPERUSER_PASSWORD')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
