@@ -1,8 +1,8 @@
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
-from .models import User, Notification, Appeal, AdminRequest
+from django.db.models.signals import pre_save
 from django.db.utils import IntegrityError
+from django.dispatch import receiver
 
+from .models import Notification, Appeal, AdminRequest
 from .tools.main_logger import logger
 
 

@@ -1,7 +1,6 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 import asyncio
-import logging
 from django.conf import settings
 
 from telegram_bot.handlers.general.start import router as start_router

@@ -32,7 +32,7 @@ DJANGO_SUPERUSER_NAME = config('DJANGO_SUPERUSER_NAME')
 DJANGO_SUPERUSER_PASSWORD = config('DJANGO_SUPERUSER_PASSWORD')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['141.8.194.104', '141.8.194.104:8000', 'localhost', '127.0.0.1']
 
@@ -175,7 +175,7 @@ logger = logging.getLogger('django')
 
 # Настройка CORS для фронтенд
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    config('FRONTEND_CORS_ORIGIN'),
 ]
 
 INSTALLED_APPS += [

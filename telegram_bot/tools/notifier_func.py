@@ -32,7 +32,7 @@ async def send_pending_notifications(bot):
                         logger.info(f"Уведомление отправлено пользователю {user.user_id} (Telegram ID: {telegram_id})")
                     except Exception as e:
                         # Логируем ошибку, если сообщение не удалось отправить
-                        print(f"Не удалось отправить уведомление пользователю {user.user_id}: {e}")
+                        logger(f"Не удалось отправить уведомление пользователю {user.user_id}: {e}")
                 else:
                     logger.error(f"У пользователя {user.user_id} отсутствует Telegram ID.")
 
