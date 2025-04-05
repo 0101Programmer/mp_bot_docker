@@ -1,16 +1,15 @@
-from aiogram.types import Message, CallbackQuery
-from aiogram import Router, F
-from asgiref.sync import sync_to_async
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-import os
-from ...models import User, Appeal  # Импортируем модели User и Appeal
-import logging  # Импортируем модуль logging
-from aiogram.types import FSInputFile
 
+from aiogram import Router, F
+from aiogram.types import FSInputFile
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from asgiref.sync import sync_to_async
+
+from ...models import Appeal  # Импортируем модели User и Appeal
 from ...tools.check_is_registred import get_user_by_telegram_id
 
-# Настройка логгера
-logger = logging.getLogger(__name__)  # Создаем логгер для текущего модуля
+from ...tools.main_logger import logger
+
 
 router = Router()
 

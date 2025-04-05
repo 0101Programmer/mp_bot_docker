@@ -1,11 +1,10 @@
 import asyncio
-import logging
 
 from asgiref.sync import sync_to_async
 
 from ..models import Notification
+from .main_logger import logger
 
-logger = logging.getLogger(__name__)
 
 async def send_pending_notifications(bot):
     """

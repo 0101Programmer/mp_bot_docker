@@ -1,10 +1,10 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from .models import User, Notification, Appeal, AdminRequest
-import logging
 from django.db.utils import IntegrityError
 
-logger = logging.getLogger(__name__)
+from .tools.main_logger import logger
+
 
 @receiver(pre_save, sender=AdminRequest)
 def track_admin_request_status_change(sender, instance, **kwargs):

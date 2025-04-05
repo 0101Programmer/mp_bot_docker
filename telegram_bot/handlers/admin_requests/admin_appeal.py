@@ -1,4 +1,3 @@
-import logging
 
 from aiogram import Router, F
 from aiogram.filters import StateFilter
@@ -8,9 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from asgiref.sync import sync_to_async
 
 from ...models import AdminRequest, User
-from ...tools.check_admin_requests import check_admin_requests
-
-logger = logging.getLogger(__name__)
+from ...tools.main_logger import logger
 
 # Создаем роутер для обработки команд
 router = Router()

@@ -1,9 +1,8 @@
 import secrets
 import time
 from redis_config import redis_client
-import logging
 
-logger = logging.getLogger(__name__)
+from .main_logger import logger
 
 def generate_token(telegram_id):
     """

@@ -1,19 +1,19 @@
+import os
+import re
+
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-import re
 from django.core.files import File
 
-import logging
-import os
 from ...models import CommissionInfo, Appeal, User
 from ...tools.check_is_registred import get_user_by_telegram_id
 
-logger = logging.getLogger(__name__)
+from ...tools.main_logger import logger
 
 # Паттерны для проверки email и номера телефона
 EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'

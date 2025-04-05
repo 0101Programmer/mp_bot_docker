@@ -1,10 +1,7 @@
-import logging
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ...models import AdminRequest, User
-
-logger = logging.getLogger(__name__)
+from ...tools.main_logger import logger
 
 
 class CheckPendingRejectedAcceptedRequest(APIView):

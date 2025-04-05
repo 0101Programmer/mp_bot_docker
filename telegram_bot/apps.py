@@ -1,7 +1,6 @@
 from django.apps import AppConfig
-import logging
+from .tools.main_logger import logger
 
-logger = logging.getLogger(__name__)
 
 class TelegramBotConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

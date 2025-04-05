@@ -1,8 +1,7 @@
-import logging
 
 from telegram_bot.tools.secret_token_generator import generate_token
+from .main_logger import logger
 
-logger = logging.getLogger(__name__)
 
 def generate_personal_link(telegram_id: int) -> str:
     """

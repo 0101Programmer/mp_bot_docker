@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import logging
+from logging.config import dictConfig
 from pathlib import Path
 import os
 from decouple import config
@@ -164,6 +165,12 @@ LOGGING = {
         'level': 'INFO',  # Уровень логирования
     },
 }
+
+# Применяем конфигурацию логгера
+dictConfig(LOGGING)
+
+# Создаем глобальный логгер
+logger = logging.getLogger('django')
 
 # Настройка CORS для фронтенд
 CORS_ALLOWED_ORIGINS = [

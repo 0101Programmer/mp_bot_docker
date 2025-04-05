@@ -1,9 +1,6 @@
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-
 from django.http import FileResponse, HttpResponseNotFound
-import os
-from django.conf import settings
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 
 from ..models import Appeal
 

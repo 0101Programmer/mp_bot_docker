@@ -1,5 +1,3 @@
-from rest_framework.views import APIView
-import logging
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,7 +6,7 @@ from redis_config import redis_client
 from ..models import User
 from ..serializers import UserSerializer
 
-logger = logging.getLogger(__name__)
+from ..tools.main_logger import logger
 
 
 class UserDataView(APIView):

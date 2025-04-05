@@ -1,11 +1,8 @@
-import logging
-import os
-from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ..models import Appeal
 
-logger = logging.getLogger(__name__)
+from ..tools.main_logger import logger
 
 class DeleteAppealView(APIView):
 

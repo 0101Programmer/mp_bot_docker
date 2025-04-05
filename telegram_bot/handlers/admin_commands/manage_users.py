@@ -1,17 +1,17 @@
-import logging
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
-from ...models import User, AdminRequest
 from django.db.utils import IntegrityError
+
+from ...models import User, AdminRequest
+from ...tools.main_logger import logger
 
 router = Router()
 
-logger = logging.getLogger(__name__)
 
 # Состояния для FSM
 class UserAction(StatesGroup):

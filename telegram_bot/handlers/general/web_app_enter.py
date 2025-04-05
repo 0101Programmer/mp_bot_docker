@@ -1,17 +1,12 @@
-import logging
 
-from aiogram import Router, F
-from aiogram.types import Message
-from ...models import User
-from ...tools.check_is_registred import get_user_by_telegram_id
-from ...tools.secret_token_generator import generate_token
+from aiogram import Router
 from aiogram.filters.command import Command
-from asgiref.sync import sync_to_async
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message
 
+from ...tools.check_is_registred import get_user_by_telegram_id
+from ...tools.main_logger import logger
 from ...tools.web_app_link_generator import generate_personal_link
-
-logger = logging.getLogger(__name__)
 
 router = Router()
 

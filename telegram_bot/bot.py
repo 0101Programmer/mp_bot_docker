@@ -20,12 +20,7 @@ from telegram_bot.handlers.general.web_app_enter import router as web_app_enter_
 
 from .tools.notifier_func import start_notification_task
 
-# === ЛОГИРОВАНИЕ ===
-logging.basicConfig(
-    level=logging.INFO,  # Уровень логов (INFO - информационные сообщения)
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # Формат логов
-)
-logger = logging.getLogger(__name__)  # Создаем экземпляр логгера
+from .tools.main_logger import logger
 
 # === ХРАНИЛИЩЕ СОСТОЯНИЙ ===
 storage = MemoryStorage()  # Инициализация хранилища состояний

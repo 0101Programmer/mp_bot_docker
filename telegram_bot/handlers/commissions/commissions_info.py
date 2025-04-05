@@ -1,11 +1,9 @@
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import Router, F
 from asgiref.sync import sync_to_async
-import logging
 from ...models import CommissionInfo  # Импортируем модель CommissionInfo
 from ...tools.check_is_registred import get_user_by_telegram_id
-
-logger = logging.getLogger(__name__)
+from ...tools.main_logger import logger
 
 router = Router()
 

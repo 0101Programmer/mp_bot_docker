@@ -2,9 +2,7 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from asgiref.sync import sync_to_async
 
-from ...models import AdminRequest, User
 from ...tools.check_admin_requests import check_admin_requests
 from ...tools.check_is_registred import get_user_by_telegram_id
 
