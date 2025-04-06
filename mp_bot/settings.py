@@ -24,6 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
+# Секретный ключ джанго и токен бота телеграм
 SECRET_KEY = config('SECRET_KEY')
 TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
 
@@ -144,6 +145,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REDIS_HOST = config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')
 REDIS_PORT = config('REDIS_PORT')
 REDIS_DB = config('REDIS_DB')
+
+# Настройка кеширования
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')}:{config('REDIS_PORT')}/{config('REDIS_DB')}',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SOCKET_CONNECT_TIMEOUT': 5,  # Таймаут подключения
+            'SOCKET_TIMEOUT': 5,         # Таймаут операций
+            'IGNORE_EXCEPTIONS': True,   # Игнорировать ошибки Redis
+        },
+        'KEY_PREFIX': 'telegram_bot',          # Префикс для ключей (опционально)
+    }
+}
+
 
 # Логирование
 LOGGING = {

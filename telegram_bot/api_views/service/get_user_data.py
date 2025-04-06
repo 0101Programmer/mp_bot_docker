@@ -1,8 +1,6 @@
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from redis_config import redis_client
+from django.core.cache import cache
 from ...models import User
 from ...serializers import UserSerializer
 
@@ -13,12 +11,14 @@ class UserDataView(APIView):
         Проверяет токен и возвращает данные пользователя через API.
         """
         # Проверяем токен в Redis
-        telegram_id = redis_client.get(f"token:{token}")
+        telegram_id = cache.get(f"token:{token}")
         if not telegram_id:
             return Response(
                 {"error": "Доступ запрещён.", "message": "Токен недействителен или истёк срок его действия."},
                 status=403
             )
+
+        telegram_id = int(telegram_id)
 
         # Получаем данные пользователя из базы данных
         try:

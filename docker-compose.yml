@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: mp_bot_docker-web
     container_name: django_web
     ports:
       - "8000:8000"
@@ -8,28 +8,22 @@ services:
       - .env
     volumes:
       - .:/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Добавляем хост для подключения к БД
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
   bot:
-    build: .
+    image: mp_bot_docker-bot
     container_name: telegram_bot
     restart: always
     env_file:
       - .env
     volumes:
       - .:/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Добавляем хост для подключения к БД
     command: ["python", "manage.py", "runbot"]
 
   frontend:
-    build:
-      context: ./mp-bot-docker-frontend
+    image: mp_bot_docker-frontend
     container_name: vue_frontend_dev
     ports:
-      - "5173:5173"  # Проброс порта 5173 из контейнера на хост
+      - "5173:5173"
     env_file:
       - .env
     depends_on:
@@ -40,5 +34,5 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"  # Проброс порта Redis на хостовую машину
+      - "6379:6379"
     restart: always

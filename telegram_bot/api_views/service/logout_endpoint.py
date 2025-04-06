@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from redis_config import redis_client
+from django.core.cache import cache
 
 
 class LogoutView(APIView):
@@ -10,13 +10,13 @@ class LogoutView(APIView):
         if not telegram_id:
             return Response({"error": "telegram_id is required"}, status=400)
 
-        # Удаляем токен из Redis
+        # Удаляем токен из кэша
         user_token_key = f"user_token:{telegram_id}"  # Ключ для обратной связи
-        token = redis_client.get(user_token_key)
+        token = cache.get(user_token_key)  # Получаем токен из кэша
 
         if token:
             token_key = f"token:{token}"  # Ключ для токена
-            redis_client.delete(token_key)
-            redis_client.delete(user_token_key)
+            cache.delete(token_key)  # Удаляем токен из кэша
+            cache.delete(user_token_key)  # Удаляем связь между telegram_id и токеном
 
         return Response({"message": "Вы успешно вышли из системы."})
