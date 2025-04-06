@@ -6,10 +6,11 @@
 
 ### **Технологический стек**  
 - **Фронтенд:** Vue 3, Vite, Pinia, TypeScript, TailwindCSS  
-- **Бэкенд:** Django, Django REST Framework, Python 3.13, Aiogram
+  - **Инструменты сборки:** Node.js, npm  
+- **Бэкенд:** Django, Django REST Framework, Python 3.13, Aiogram  
 - **База данных:** PostgreSQL  
 - **Контейнеризация:** Docker  
-- **Дополнительно:** Asyncio (для асинхронных задач), Redis (кэширование)
+- **Дополнительно:** Asyncio (для асинхронных задач), Redis (кэширование)  
 
 ---
 
