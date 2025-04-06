@@ -129,6 +129,9 @@ DOCKER_BUILDKIT=1
    - Запустить Docker Desktop.
    - Ввести в терминал: `python docker_start_project.py`.
 
+> Если требуется пересобрать контейнеры, то перед запуском необходимо ввести в терминал `docker compose down`
+
+
 ---
 
 ### **Выполнение миграций**
