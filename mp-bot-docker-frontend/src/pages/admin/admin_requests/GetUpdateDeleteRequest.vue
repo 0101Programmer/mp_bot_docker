@@ -85,11 +85,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../../../stores/userStore';
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore';
 
-// Инициализируем роутер и хранилище пользователя
+// Инициализируем роутер, хранилище пользователя и хранилище конфигурации
 const router = useRouter();
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Инициализируем configStore
 
 // Состояния для данных заявок
 const requests = ref<any[]>([]);
@@ -98,7 +100,7 @@ const isLoading = ref(true);
 // Загрузка данных заявок
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:8000/telegram_bot/api/v1/admin/admin_requests/');
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/admin_requests/`);
     if (response.ok) {
       requests.value = await response.json();
       // Инициализируем режим отклонения
@@ -150,7 +152,7 @@ const updateStatus = async (id: number, status: string) => {
       return;
     }
 
-    const response = await fetch(`http://localhost:8000/telegram_bot/api/v1/admin/update_admin_request_status/${id}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/update_admin_request_status/${id}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -182,7 +184,7 @@ const confirmDelete = (id: number) => {
 // Удаление заявки
 const deleteRequest = async (id: number) => {
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/api/v1/admin/delete_admin_request/${id}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/delete_admin_request/${id}/`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

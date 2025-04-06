@@ -3,10 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from redis_config import redis_client
-from ..models import User
-from ..serializers import UserSerializer
-
-from ..tools.main_logger import logger
+from ...models import User
+from ...serializers import UserSerializer
 
 
 class UserDataView(APIView):

@@ -54,11 +54,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import {useUserStore} from "../../../stores/userStore.ts";
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем configStore
 
-// Инициализируем роутер и хранилище пользователя
+// Инициализируем роутер, хранилище пользователя и хранилище конфигурации
 const router = useRouter();
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Инициализируем configStore
 
 // Состояния для полей формы
 const commissions = ref<{ id: string; name: string }[]>([]);
@@ -70,7 +72,7 @@ const isLoading = ref(false);
 // Загрузка списка комиссий
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:8000/telegram_bot/commissions/');
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/commissions/`);
     if (response.ok) {
       commissions.value = await response.json();
     } else {
@@ -95,7 +97,7 @@ const deleteCommission = async () => {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/delete_commission/${commissionId}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/delete_commission/${commissionId}/`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from ..models import Appeal
+from ....models import Appeal
 
-from ..tools.main_logger import logger
+from ....tools.main_logger import logger
 
 class DeleteAppealView(APIView):
 

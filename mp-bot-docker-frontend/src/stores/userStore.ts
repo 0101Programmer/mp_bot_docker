@@ -26,7 +26,7 @@ export const useUserStore = defineStore('user', {
 
       try {
         const configStore = useConfigStore();
-        const backendUrl = `${configStore.backendBaseUrl}/get_user_data/${this.authToken}/`;
+        const backendUrl = `${configStore.backendBaseUrl}/api/v1/service/get_user_data/${this.authToken}/`;
 
         const response = await fetch(backendUrl, {
           method: 'GET',

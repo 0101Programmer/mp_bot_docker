@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
+import { useConfigStore } from '@/stores/configStore.ts'; // Импортируем хранилище конфигурации
 
 // Инициализируем хранилище конфигурации
 const configStore = useConfigStore();
@@ -56,7 +56,7 @@ const isEmptyCommissions = ref(false);
 // Загрузка списка комиссий при монтировании компонента
 onMounted(async () => {
   try {
-    const response = await fetch(`${configStore.backendBaseUrl}/commissions/`); // Используем backendBaseUrl
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/commissions/`); // Используем backendBaseUrl
     if (response.ok) {
       const data = await response.json();
       commissions.value = data;

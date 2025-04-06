@@ -156,8 +156,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/userStore';
-import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore.ts'; // Импортируем хранилище конфигурации
 
 // Инициализируем хранилище пользователя, конфигурации и роутер
 const userStore = useUserStore();
@@ -180,7 +180,7 @@ const manualUserId = ref<number | null>(null); // ID пользователя т
 // Загрузка списка комиссий
 onMounted(async () => {
   try {
-    const response = await fetch(`${configStore.backendBaseUrl}/commissions/`); // Используем backendBaseUrl
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/commissions/`); // Используем backendBaseUrl
     if (response.ok) {
       commissions.value = await response.json();
     } else {
@@ -233,7 +233,7 @@ const deleteUser = async () => {
   }
 
   try {
-    const response = await fetch(`${configStore.backendBaseUrl}/delete_user/${userId}/`, { // Используем backendBaseUrl
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/delete_user/${userId}/`, { // Используем backendBaseUrl
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

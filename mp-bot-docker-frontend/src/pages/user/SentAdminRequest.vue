@@ -64,8 +64,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useUserStore } from '@/stores/userStore';
-import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore.ts'; // Импортируем хранилище конфигурации
 import axios from 'axios';
 
 // Определяем типы

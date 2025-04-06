@@ -1,18 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Account from '../pages/Account.vue';
-import ErrorPage from '../pages/ErrorPage.vue';
-import Home from '../pages/Home.vue';
-import MyAppeals from "../pages/MyAppeals.vue";
-import Success from "../pages/Success.vue";
-import CreateAppeal from "../pages/CreateAppeal.vue";
-import CommissionsInfo from "../pages/CommissionsInfo.vue";
-import AdminPanel from "../pages/AdminPanel.vue";
-import CreateCommission from "../pages/admin/commissions/CreateCommission.vue";
-import DeleteCommission from "../pages/admin/commissions/DeleteCommission.vue";
-import UpdateCommission from "../pages/admin/commissions/UpdateCommission.vue";
-import GetUpdateDeleteAppeal from "../pages/admin/appeals/GetUpdateDeleteAppeal.vue";
-import GetUpdateDeleteRequest from "../pages/admin/admin_requests/GetUpdateDeleteRequest.vue";
-import SentAdminRequest from "../pages/SentAdminRequest.vue";
+import Account from '@/pages/common/Account.vue';
+import ErrorPage from '@/pages/service/ErrorPage.vue';
+import Home from '@/pages/common/Home.vue';
+import MyAppeals from "@/pages/common/MyAppeals.vue";
+import Success from "@/pages/service/Success.vue";
+import CreateAppeal from "@/pages/common/CreateAppeal.vue";
+import CommissionsInfo from "@/pages/common/CommissionsInfo.vue";
+import AdminPanel from "@/pages/admin/AdminPanel.vue";
+import CreateCommission from "@/pages/admin/commissions/CreateCommission.vue";
+import DeleteCommission from "@/pages/admin/commissions/DeleteCommission.vue";
+import UpdateCommission from "@/pages/admin/commissions/UpdateCommission.vue";
+import GetUpdateDeleteAppeal from "@/pages/admin/appeals/GetUpdateDeleteAppeal.vue";
+import GetUpdateDeleteRequest from "@/pages/admin/admin_requests/GetUpdateDeleteRequest.vue";
+import SentAdminRequest from "@/pages/user/SentAdminRequest.vue";
 
 
 const routes = [

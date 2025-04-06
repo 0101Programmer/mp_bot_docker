@@ -88,8 +88,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from "@/stores/userStore.ts";
-import { useConfigStore } from "@/stores/configStore.ts"; // Импортируем хранилище конфигурации
+import { useUserStore } from "@/stores/userStore.js";
+import { useConfigStore } from "@/stores/configStore.js"; // Импортируем хранилище конфигурации
 
 // Инициализируем хранилища
 const userStore = useUserStore();
@@ -110,7 +110,7 @@ const isEmptyCommissions = computed(() => commissions.value.length === 0);
 
 onMounted(async () => {
   try {
-    const response = await fetch(`${configStore.backendBaseUrl}/commissions/`); // Используем backendBaseUrl
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/commissions/`); // Используем backendBaseUrl
     if (response.ok) {
       commissions.value = await response.json();
     } else {
@@ -140,7 +140,7 @@ const submitAppeal = async () => {
     if (contactInfo.value) formData.append('contact_info', contactInfo.value);
     if (file.value) formData.append('file', file.value);
 
-    const response = await fetch(`${configStore.backendBaseUrl}/appeal_create/`, { // Используем backendBaseUrl
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/user/appeal_create/`, { // Используем backendBaseUrl
       method: 'POST',
       body: formData,
     });

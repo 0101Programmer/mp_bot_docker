@@ -70,12 +70,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import {useUserStore} from "../../../stores/userStore.ts";
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем configStore
 
-// Инициализируем роутер, текущий маршрут и хранилище пользователя
+// Инициализируем роутер, текущий маршрут, хранилище пользователя и хранилище конфигурации
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Инициализируем configStore
 
 // Получаем ID комиссии из параметров маршрута
 const commissionId = route.params.id; // ID комиссии
@@ -90,7 +92,7 @@ const isCommissionFound = ref(true); // Флаг, найдена ли комис
 // Загрузка данных комиссии
 onMounted(async () => {
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/commission_detail/${commissionId}/`);
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/commission_detail/${commissionId}/`);
     if (response.ok) {
       const data = await response.json();
       name.value = data.name;
@@ -113,7 +115,7 @@ const updateCommission = async () => {
   isLoading.value = true;
 
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/update_commission/${commissionId}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/update_commission/${commissionId}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

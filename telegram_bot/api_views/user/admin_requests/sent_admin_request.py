@@ -1,10 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ...models import User, AdminRequest
-from ...serializers import AdminRequestCreateSerializer
+from ....models import User, AdminRequest
+from ....serializers import AdminRequestCreateSerializer
 
-from ...tools.main_logger import logger
+from ....tools.main_logger import logger
 
 class SentAdminRequest(APIView):
     """

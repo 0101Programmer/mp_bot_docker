@@ -2,10 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
-from ..models import User, CommissionInfo, Appeal
-from ..serializers import AppealSerializer
+from ....models import User, CommissionInfo, Appeal
+from ....serializers import AppealSerializer
 
-from ..tools.main_logger import logger
+from ....tools.main_logger import logger
 
 class CreateAppealView(APIView):
     def post(self, request):

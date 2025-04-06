@@ -48,7 +48,7 @@
             <td class="px-6 py-4">
               <a
                 v-if="appeal.file_path"
-                :href="`http://localhost:8000/telegram_bot/download/${appeal.id}`"
+                :href="`http://localhost:8000/telegram_bot/api/v1/service/download/${appeal.id}`"
                 class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
                 target="_blank"
               >
@@ -95,11 +95,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../../../stores/userStore';
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore';
 
-// Инициализируем роутер и хранилище пользователя
+// Инициализируем роутер и хранилища
 const router = useRouter();
 const userStore = useUserStore();
+const configStore = useConfigStore();
 
 // Состояния для данных обращений
 const appeals = ref<any[]>([]);
@@ -109,7 +111,7 @@ const filterId = ref<number | null>(null);
 // Загрузка данных обращений
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:8000/telegram_bot/admin/appeals/');
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/appeals/`);
     if (response.ok) {
       appeals.value = await response.json();
     } else {
@@ -131,7 +133,7 @@ const filteredAppeals = computed(() => {
 // Обновление статуса обращения
 const updateStatus = async (id: number, status: string) => {
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/admin/update_appeal_status/${id}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/update_appeal_status/${id}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -162,7 +164,7 @@ const confirmDelete = (id: number) => {
 // Удаление обращения
 const deleteAppeal = async (id: number) => {
   try {
-    const response = await fetch(`http://localhost:8000/telegram_bot/admin/delete_appeal/${id}/`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/delete_appeal/${id}/`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

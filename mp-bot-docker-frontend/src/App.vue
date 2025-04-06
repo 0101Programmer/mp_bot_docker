@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useUserStore } from './stores/userStore';
+import { useUserStore } from '@/stores/userStore';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
 
 // Инициализируем хранилище и роутер
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Инициализируем хранилище конфигурации
 const route = useRoute();
 const router = useRouter();
 
@@ -24,7 +26,7 @@ const logout = async () => {
     }
 
     // Отправляем запрос на выход с query-параметром
-    const response = await fetch(`http://localhost:8000/telegram_bot/logout/?telegram_id=${telegramId}`, {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/logout/?telegram_id=${telegramId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

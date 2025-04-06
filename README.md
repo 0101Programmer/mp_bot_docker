@@ -109,7 +109,7 @@ DEBUG=True
 
 1. **Запуск без Docker:**
    - Установка `USE_DOCKER=0` в `.env`.
-   - Запуск Redis `~$ redis-server`.
+   - Запуск Redis (через bash) `~$ sudo systemctl start redis`.
    - Ввод в терминал: `python no_docker_start_project.py`.
 
 2. **Запуск с Docker:**

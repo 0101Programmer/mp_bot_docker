@@ -56,13 +56,15 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
-import {useRouter} from 'vue-router';
-import {useUserStore} from "../../../stores/userStore.ts";
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore.ts';
+import { useConfigStore } from '@/stores/configStore'; // Импортируем configStore
 
-// Инициализируем роутер и хранилище пользователя
+// Инициализируем роутер, хранилище пользователя и хранилище конфигурации
 const router = useRouter();
 const userStore = useUserStore();
+const configStore = useConfigStore(); // Инициализируем configStore
 
 // Состояния для полей формы
 const name = ref('');
@@ -76,7 +78,7 @@ const createCommission = async () => {
   isLoading.value = true;
 
   try {
-    const response = await fetch('http://localhost:8000/telegram_bot/create_commission/', {
+    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/admin/create_commission/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

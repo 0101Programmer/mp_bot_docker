@@ -2,7 +2,7 @@ from django.http import FileResponse, HttpResponseNotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from ..models import Appeal
+from ...models import Appeal
 
 
 class DownloadFileView(APIView):

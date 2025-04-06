@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore } from '@/stores/userStore.ts';
 import { useRouter } from 'vue-router';
 
 // Инициализируем хранилище и роутер
