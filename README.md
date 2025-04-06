@@ -126,7 +126,9 @@ DOCKER_BUILDKIT=1
 2. **Запуск с Docker + COMPOSE_BAKE:**
    - Установить `USE_DOCKER=1` в `.env`.
    - Запустить Docker Desktop.
-   - Ввести в терминал: `docker buildx bake`, а затем `docker compose up`.
+   - Ввести в терминал: `python docker_start_project.py`.
+
+---
 
 ### **Выполнение миграций**
 

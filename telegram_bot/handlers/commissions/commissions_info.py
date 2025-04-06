@@ -1,24 +1,19 @@
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import Router, F
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
-from ...models import CommissionInfo  # Импортируем модель CommissionInfo
-from ...tools.check_is_registred import get_user_by_telegram_id
+
+from ...models import CommissionInfo
 from ...tools.main_logger import logger
 
 router = Router()
 
 # Обработчик текста "Описание комиссий"
 @router.message(F.text == "Описание комиссий")
-async def show_commissions(message: Message):
-    # Получаем Telegram ID пользователя
-    telegram_id = message.from_user.id
-
-    # Проверяем, зарегистрирован ли пользователь
-    user = await get_user_by_telegram_id(telegram_id)
-    if not user:
-        await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
-        return
-
+async def show_commissions(message: Message, user=None):
+    """
+    Обработчик для кнопки "Описание комиссий".
+    :param user: Пользователь, полученный из middleware
+    """
     try:
         # Получаем все комиссии из базы данных
         commissions = await sync_to_async(list)(CommissionInfo.objects.all())

@@ -11,8 +11,6 @@ from asgiref.sync import sync_to_async
 from django.core.files import File
 
 from ...models import CommissionInfo, Appeal, User
-from ...tools.check_is_registred import get_user_by_telegram_id
-
 from ...tools.main_logger import logger
 
 # Паттерны для проверки email и номера телефона
@@ -48,16 +46,11 @@ router = Router()
 
 # Обработчик текста "Написать обращение"
 @router.message(F.text == "Написать обращение")
-async def start_appeal_form(message: Message, state: FSMContext):
-    # Получаем Telegram ID пользователя
-    telegram_id = message.from_user.id
-
-    # Проверяем, зарегистрирован ли пользователь
-    user = await get_user_by_telegram_id(telegram_id)
-    if not user:
-        await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
-        return
-
+async def start_appeal_form(message: Message, state: FSMContext, user=None):
+    """
+    Обработчик для кнопки "Написать обращение".
+    :param user: Пользователь, полученный из middleware
+    """
     try:
         # Получаем все комиссии из базы данных
         commissions = await sync_to_async(list)(CommissionInfo.objects.all())

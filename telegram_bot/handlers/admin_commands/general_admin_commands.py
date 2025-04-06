@@ -4,7 +4,6 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from ...tools.check_admin_requests import check_admin_requests
-from ...tools.check_is_registred import get_user_by_telegram_id
 
 # Создаем роутер для обработки команд
 router = Router()
@@ -21,22 +20,14 @@ def get_admin_main_menu_keyboard():
 
 # Команда /admin
 @router.message(Command("admin"))
-async def admin_command(message: Message):
-    # Получаем Telegram ID пользователя
-    telegram_id = message.from_user.id
-
-    # Проверяем, зарегистрирован ли пользователь
-    user = await get_user_by_telegram_id(telegram_id)
-    if not user:
-        await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
-        return
-
-    # Проверяем, является ли пользователь администратором
+async def admin_command(message: Message, user=None):
+    """
+    Команда /admin
+    :param user: Пользователь, полученный из middleware
+    """
     if user.is_admin:
-        # Отправляем главное меню администратора
         await message.answer("Выберите категорию:", reply_markup=get_admin_main_menu_keyboard())
     else:
-        # Проверяем статус заявок пользователя
         response, reply_markup = await check_admin_requests(user)
         await message.answer(response, reply_markup=reply_markup)
 

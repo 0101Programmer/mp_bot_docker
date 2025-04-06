@@ -5,26 +5,18 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 
-from ...models import Appeal  # Импортируем модели User и Appeal
-from ...tools.check_is_registred import get_user_by_telegram_id
-
+from ...models import Appeal
 from ...tools.main_logger import logger
-
 
 router = Router()
 
 # Обработчик для кнопки "Отследить статус обращения"
 @router.message(F.text == "Отследить статус обращения")
-async def track_appeal_status(message: Message):
-    # Получаем Telegram ID пользователя
-    telegram_id = message.from_user.id
-
-    # Проверяем, зарегистрирован ли пользователь
-    user = await get_user_by_telegram_id(telegram_id)
-    if not user:
-        await message.answer("Вы не зарегистрированы. Пожалуйста, начните с команды /start.")
-        return
-
+async def track_appeal_status(message: Message, user=None):
+    """
+    Обработчик для кнопки "Отследить статус обращения".
+    :param user: Пользователь, полученный из middleware
+    """
     try:
         # Находим все обращения пользователя
         appeals = await sync_to_async(list)(Appeal.objects.filter(user=user).select_related('commission'))

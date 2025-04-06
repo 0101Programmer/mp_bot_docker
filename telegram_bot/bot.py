@@ -16,6 +16,7 @@ from telegram_bot.handlers.admin_commands.manage_admin_requests import router as
 from telegram_bot.handlers.admin_commands.manage_appeals import router as manage_appeals_router
 from telegram_bot.handlers.admin_commands.manage_users import router as manage_users_router
 from telegram_bot.handlers.general.web_app_enter import router as web_app_enter_router
+from .middlewares.auth_middleware import CheckUserRegisteredMiddleware
 
 from .tools.notifier_func import start_notification_task
 
@@ -27,6 +28,9 @@ storage = MemoryStorage()  # Инициализация хранилища со�
 # === ИНИЦИАЛИЗАЦИЯ БОТА И ДИСПЕТЧЕРА ===
 bot = Bot(token=settings.TELEGRAM_API_TOKEN)
 dp = Dispatcher(storage=storage)  # Передаем storage в Dispatcher
+
+# === РЕГИСТРАЦИЯ MIDDLEWARE ===
+dp.message.middleware(CheckUserRegisteredMiddleware())
 
 # === РЕГИСТРАЦИЯ РОУТЕРОВ ===
 dp.include_router(start_router)
@@ -48,7 +52,6 @@ dp.include_router(other_router)
 
 # === МЕТОД ДЛЯ ЗАПУСКА БОТА ===
 async def start_bot():
-    logger.info("Запуск бота...")  # Логируем запуск бота
 
     # Запускаем фоновую задачу отправки уведомлений
     notification_task = await start_notification_task(bot)

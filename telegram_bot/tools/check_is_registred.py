@@ -1,5 +1,6 @@
-from ..models import User
 from asgiref.sync import sync_to_async
+
+from ..models import User
 
 
 async def get_user_by_telegram_id(telegram_id: int) -> User | None:
