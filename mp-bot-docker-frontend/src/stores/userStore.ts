@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from './configStore';
+import axios from 'axios';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -28,22 +29,15 @@ export const useUserStore = defineStore('user', {
         const configStore = useConfigStore();
         const backendUrl = `${configStore.backendBaseUrl}/api/v1/service/get_user_data/${this.authToken}/`;
 
-        const response = await fetch(backendUrl, {
-          method: 'GET',
+        const response = await axios.get(backendUrl, {
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Ошибка при загрузке данных пользователя.');
-        }
-
-        const userData = await response.json();
-        this.setUserData(userData);
+        this.setUserData(response.data);
       } catch (error) {
-        console.error('Ошибка при загрузке данных пользователя:', error.message);
+        console.error('Ошибка при загрузке данных пользователя:', error.message || 'Неизвестная ошибка');
         this.clearUserData();
       }
     },

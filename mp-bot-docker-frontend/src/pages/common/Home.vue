@@ -11,23 +11,32 @@ const router = useRouter();
 const isLoading = ref(true);
 
 // Функция для загрузки данных через API
-onMounted(() => {
-  const token = new URLSearchParams(window.location.search).get('token'); // Получаем токен из URL
+onMounted(async () => {
+  try {
+    const token = new URLSearchParams(window.location.search).get('token'); // Получаем токен из URL
 
-  if (!token) {
-    console.error('Токен не найден в URL.');
-    router.push('/error?message=Токен отсутствует');
+    if (!token) {
+      console.error('Токен не найден в URL.');
+      await router.push('/error?message=Токен отсутствует');
+      isLoading.value = false;
+      return;
+    }
+
+    // Сохраняем токен в localStorage и хранилище
+    localStorage.setItem('authToken', token);
+    userStore.setAuthToken(token);
+
+    // Гарантируем, что loadUserData выполнится только после установки токена
+    await userStore.loadUserData();
+
+    // Переходим на страницу аккаунта
+    await router.push('/account');
+  } catch (error) {
+    console.error('Ошибка при загрузке данных пользователя:', error);
+    await router.push('/error?message=Ошибка при загрузке данных');
+  } finally {
     isLoading.value = false;
-    return;
   }
-
-  // Сохраняем токен в localStorage и загружаем данные пользователя
-  localStorage.setItem('authToken', token);
-  userStore.setAuthToken(token);
-  userStore.loadUserData().finally(() => {
-    isLoading.value = false;
-    router.push('/account');
-  });
 });
 </script>
 
