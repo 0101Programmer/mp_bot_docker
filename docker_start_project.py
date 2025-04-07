@@ -1,5 +1,6 @@
 import subprocess
 from decouple import config
+import argparse
 
 
 def run_command(command, description):
@@ -37,6 +38,12 @@ def check_images_exist():
 
 
 if __name__ == "__main__":
+    # Парсинг аргументов командной строки
+    parser = argparse.ArgumentParser(description='Запуск проекта в Docker')
+    parser.add_argument('-d', '--down', action='store_true',
+                       help='Остановить и удалить контейнеры перед пересборкой')
+    args = parser.parse_args()
+
     # Загружаем значение USE_DOCKER из .env
     USE_DOCKER = config("USE_DOCKER")
 
@@ -46,9 +53,12 @@ if __name__ == "__main__":
         exit(1)
 
     try:
-        # Проверяем наличие образов
-        if not check_images_exist():
-            print("Локальные образы не найдены. Выполняется сборка образов...")
+        # Если указан флаг -d, сначала останавливаем и удаляем контейнеры
+        if args.down:
+            run_command("docker compose down", "Остановка контейнеров через docker compose down")
+
+        # Если указан флаг -d или образы не найдены
+        if args.down or not check_images_exist():
             run_command("docker buildx bake", "Сборка образов через docker buildx bake")
 
         # Запуск контейнеров
