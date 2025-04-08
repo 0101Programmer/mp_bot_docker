@@ -52,15 +52,20 @@ dp.include_router(other_router)
 
 # === МЕТОД ДЛЯ ЗАПУСКА БОТА ===
 async def start_bot():
+    # 1. Сначала сбрасываем все pending updates
+    await bot.delete_webhook(drop_pending_updates=True)
+    await asyncio.sleep(1)  # Необязательно, но снижает риск пропустить апдейты
 
-    # Запускаем фоновую задачу отправки уведомлений
+    # 2. Затем запускаем фоновые задачи
     notification_task = await start_notification_task(bot)
 
     try:
-        await dp.start_polling(bot, skip_updates=True)  # Запускаем бота
+        # 3. Запускаем бота с двойной страховкой (webhook + polling)
+        await dp.start_polling(bot, skip_updates=True)
     finally:
-        notification_task.cancel()  # Отменяем задачу при завершении работы бота
+        # 4. Корректная остановка
+        notification_task.cancel()
         try:
             await notification_task
         except asyncio.CancelledError:
-            logger.info("Задача отправки уведомлений отменена.")  # Логируем отмену задачи
+            logger.info("Задача отправки уведомлений отменена.")
