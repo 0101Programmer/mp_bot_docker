@@ -2,11 +2,11 @@ from django.db import models
 from asgiref.sync import sync_to_async
 
 class User(models.Model):
-    user_id = models.BigAutoField(primary_key=True)  # Автоматически генерируется
-    telegram_id = models.BigIntegerField(unique=True, null=True, blank=True)
-    username = models.CharField(max_length=255, null=True, blank=True)
-    first_name = models.CharField(max_length=255, null=True, blank=True)
-    last_name = models.CharField(max_length=255, null=True, blank=True)
+    user_id = models.BigAutoField(primary_key=True)
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=255, blank=True, default="")
+    first_name = models.CharField(max_length=255, default="")
+    last_name = models.CharField(max_length=255, blank=True, default="")
     is_admin = models.BooleanField(default=False)
 
     def __str__(self):
