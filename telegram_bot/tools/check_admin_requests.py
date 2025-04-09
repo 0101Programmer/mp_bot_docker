@@ -8,8 +8,10 @@ async def check_admin_requests(user: User):
     Проверяет статус заявок пользователя на административные права.
     Возвращает кортеж (response_message, reply_markup) или None, если заявок нет.
     """
-    # Проверяем, есть ли у пользователя заявка в ожидании
-    pending_request_exists = await sync_to_async(AdminRequest.objects.filter(user=user, status='pending').exists)()
+    # Проверяем, есть ли у пользователя активная заявка в ожидании
+    pending_request_exists = await sync_to_async(
+        AdminRequest.objects.filter(user=user, status='pending').exists
+    )()
     if pending_request_exists:
         return (
             "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте.",
@@ -29,7 +31,7 @@ async def check_admin_requests(user: User):
         # Формируем сообщение с комментарием
         response = (
             f"Ваша предыдущая заявка на административные права была отклонена.\n"
-            f"Комментарий: {rejected_request.comment}\n"
+            f"Комментарий: {rejected_request.comment or 'Комментарий отсутствует.'}\n"
             f"Вы можете подать новую заявку."
         )
 
