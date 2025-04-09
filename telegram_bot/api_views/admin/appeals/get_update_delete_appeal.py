@@ -1,10 +1,11 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from ....models import Appeal
 from ....serializers import AppealSerializerForAdmin
 from ....tools.check_admin_status import is_user_admin
+
 
 class AppealListForAdminView(APIView):
 

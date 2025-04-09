@@ -59,16 +59,16 @@
             <td class="px-6 py-4">
               <div class="space-y-2">
                 <!-- Отображение текущего статуса -->
-                <span class="font-semibold">{{ appeal.status }}</span>
-                <!-- Выпадающий список для изменения статуса -->
+                <span class="font-semibold">{{ getStatusDisplay(appeal.status) }}</span>
+                <!-- Выпадающий список для изменения статуса (только для новых обращений) -->
                 <select
-                  v-if="appeal.status === 'Новое'"
+                  v-if="appeal.status === 'new'"
                   v-model="appeal.status"
                   @change="updateStatus(appeal.id, appeal.status)"
                   class="block w-full px-3 py-1 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="Отклонено">Отклонено</option>
-                  <option value="Обработано">Обработано</option>
+                  <option value="processed">Обработано</option>
+                  <option value="rejected">Отклонено</option>
                 </select>
               </div>
             </td>
@@ -137,7 +137,7 @@ const updateStatus = async (id: number, status: string) => {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userStore.userData?.user_id, // Передаем user_id из хранилища
+        user_id: userStore.userData?.id,
         status,
       }),
     });
@@ -168,7 +168,7 @@ const deleteAppeal = async (id: number) => {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userStore.userData?.user_id, // Передаем user_id из хранилища
+        user_id: userStore.userData?.id,
       }),
     });
 
@@ -183,5 +183,14 @@ const deleteAppeal = async (id: number) => {
     console.error('Ошибка:', error.message);
     alert(`Ошибка при удалении обращения: ${error.message}`);
   }
+};
+// Функция для отображения статуса на русском
+const getStatusDisplay = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'new': 'Новое',
+    'processed': 'Обработано',
+    'rejected': 'Отклонено',
+  };
+  return statusMap[status] || status;
 };
 </script>

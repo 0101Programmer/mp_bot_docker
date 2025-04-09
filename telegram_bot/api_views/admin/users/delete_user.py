@@ -27,7 +27,7 @@ class DeleteUserView(APIView):
 
         # Ищем пользователя по ID
         try:
-            user = User.objects.get(user_id=user_id)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise NotFound("Пользователь с указанным ID не найден.")
 

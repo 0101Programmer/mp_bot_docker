@@ -27,7 +27,7 @@ class CreateAppealView(APIView):
 
             # Находим пользователя
             try:
-                user = User.objects.get(user_id=user_id)
+                user = User.objects.get(id=user_id)
             except ObjectDoesNotExist:
                 return Response(
                     {"errors": {"user_id": ["Пользователь с указанным ID не найден."]}},
@@ -47,7 +47,7 @@ class CreateAppealView(APIView):
 
             # Создаем объект для сериализации
             data = {
-                'user': user.user_id,
+                'user': user.id,
                 'commission': commission.id if commission else None,
                 'appeal_text': appeal_text,
                 'contact_info': contact_info,

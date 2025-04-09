@@ -61,7 +61,7 @@ onMounted(async () => {
         <!-- Тело таблицы -->
         <tbody>
           <tr class="border-b border-gray-700 hover:bg-gray-700">
-            <td class="px-6 py-4">{{ userStore.userData.user_id }}</td>
+            <td class="px-6 py-4">{{ userStore.userData.id }}</td>
             <td class="px-6 py-4">{{ userStore.userData.telegram_id }}</td>
             <td class="px-6 py-4">{{ userStore.userData.username || '-' }}</td>
             <td class="px-6 py-4">{{ userStore.userData.first_name || '-' }}</td>

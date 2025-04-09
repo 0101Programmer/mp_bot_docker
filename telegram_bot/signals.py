@@ -1,4 +1,4 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, pre_delete
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
 
@@ -90,3 +90,12 @@ def track_appeal_status_change(sender, instance, **kwargs):
         except sender.DoesNotExist:
             # Если объект не существует (например, при создании), ничего не делаем
             pass
+
+@receiver(pre_delete, sender=AdminRequest)
+def update_user_status_on_delete(sender, instance, **kwargs):
+    """
+    Сигнал для изменения статуса пользователя перед удалением запроса.
+    """
+    if instance.user.is_admin:
+        instance.user.is_admin = False
+        instance.user.save(update_fields=['is_admin'])

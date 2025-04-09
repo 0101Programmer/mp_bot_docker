@@ -101,7 +101,7 @@ const deleteCommission = async () => {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userStore.userData?.user_id, // Передаем user_id из хранилища
+        user_id: userStore.userData?.id,
       }),
     });
 

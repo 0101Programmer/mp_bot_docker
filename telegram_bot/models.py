@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 class StatusChoices:
     """Константы для статусов"""
@@ -20,6 +21,30 @@ class StatusChoices:
         (APPROVED, _('Одобрено')),
         (REJECTED, _('Отклонено')),
     ]
+
+def validate_appeal_status(value):
+    """
+    Валидатор для проверки допустимых статусов обращения.
+    """
+    valid_statuses = [status[0] for status in StatusChoices.APPEAL_STATUSES]
+    if value not in valid_statuses:
+        raise ValidationError(
+            _('Недопустимый статус обращения. Допустимые значения: {}').format(
+                ', '.join(valid_statuses)
+            )
+        )
+
+def validate_admin_request_status(value):
+    """
+    Валидатор для проверки допустимых статусов запроса на администрирование.
+    """
+    valid_statuses = [status[0] for status in StatusChoices.ADMIN_REQUEST_STATUSES]
+    if value not in valid_statuses:
+        raise ValidationError(
+            _('Недопустимый статус запроса. Допустимые значения: {}').format(
+                ', '.join(valid_statuses)
+            )
+        )
 
 
 class User(models.Model):
@@ -97,7 +122,8 @@ class Appeal(models.Model):
         choices=StatusChoices.APPEAL_STATUSES,
         default=StatusChoices.NEW,
         verbose_name=_('Статус'),
-        help_text=_('Возможные статусы: Новое, Обработано, Отклонено.')
+        help_text=_('Возможные статусы: Новое, Обработано, Отклонено.'),
+        validators = [validate_appeal_status]
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Дата создания'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Дата обновления'))
@@ -109,6 +135,12 @@ class Appeal(models.Model):
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['created_at']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=[status[0] for status in StatusChoices.APPEAL_STATUSES]),
+                name='valid_appeal_status'
+            )
         ]
 
     def __str__(self):
@@ -170,7 +202,8 @@ class AdminRequest(models.Model):
         choices=StatusChoices.ADMIN_REQUEST_STATUSES,
         default=StatusChoices.PENDING,
         verbose_name=_('Статус'),
-        help_text=_('Возможные статусы: В ожидании, Одобрено, Отклонено.')
+        help_text=_('Возможные статусы: В ожидании, Одобрено, Отклонено.'),
+        validators=[validate_admin_request_status]
     )
     comment = models.TextField(
         blank=True,
@@ -185,6 +218,12 @@ class AdminRequest(models.Model):
         verbose_name = _('Запрос администратору')
         verbose_name_plural = _('Запросы администраторам')
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=[status[0] for status in StatusChoices.ADMIN_REQUEST_STATUSES]),
+                name='valid_admin_request_status'
+            )
+        ]
 
     def __str__(self):
         return f"Запрос #{self.id} от {self.user} ({self.get_status_display()})"
