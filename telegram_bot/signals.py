@@ -1,8 +1,7 @@
 from django.db.models.signals import pre_save, pre_delete
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
-
-from .models import Notification, Appeal, AdminRequest
+from .models import Notification, Appeal, AdminRequest, User
 from .tools.main_logger import logger
 
 
@@ -91,11 +90,30 @@ def track_appeal_status_change(sender, instance, **kwargs):
             # Если объект не существует (например, при создании), ничего не делаем
             pass
 
+
 @receiver(pre_delete, sender=AdminRequest)
 def update_user_status_on_delete(sender, instance, **kwargs):
     """
     Сигнал для изменения статуса пользователя перед удалением запроса.
+    Создает уведомление о снятии статуса администратора.
     """
     if instance.user.is_admin:
+        # Формируем текст уведомления
+        message = "Ваш статус администратора был отозван, но вы можете подать новую заявку."
+
+        # Создаем уведомление
+        try:
+            Notification.objects.create(
+                user=instance.user,
+                appeal=None,
+                message=message,
+                sent=False
+            )
+            logger.info(f"Уведомление о снятии статуса админа создано для пользователя {instance.user.id}.")
+        except IntegrityError as e:
+            logger.error(f"Ошибка при создании уведомления: {e}")
+
+        # Обновляем статус пользователя
         instance.user.is_admin = False
         instance.user.save(update_fields=['is_admin'])
+        logger.info(f"Статус администратора снят у пользователя {instance.user.id}.")
