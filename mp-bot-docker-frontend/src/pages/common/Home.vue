@@ -22,7 +22,10 @@ onMounted(async () => {
       return;
     }
 
-    // Сохраняем токен в localStorage и хранилище
+    // Очищаем старые данные перед установкой новых
+    userStore.clearUserData();
+
+    // Сохраняем новый токен в localStorage и хранилище
     localStorage.setItem('authToken', token);
     userStore.setAuthToken(token);
 

@@ -21,6 +21,7 @@ from .middlewares.auth_middleware import CheckUserRegisteredMiddleware
 from .tools.notifier_func import start_notification_task
 
 from .tools.main_logger import logger
+from .tools.notifs_deleter_func import start_notification_cleanup_task
 
 # === ХРАНИЛИЩЕ СОСТОЯНИЙ ===
 storage = MemoryStorage()  # Инициализация хранилища состояний
@@ -52,20 +53,36 @@ dp.include_router(other_router)
 
 # === МЕТОД ДЛЯ ЗАПУСКА БОТА ===
 async def start_bot():
-    # 1. Сначала сбрасываем все pending updates
-    await bot.delete_webhook(drop_pending_updates=True)
-    await asyncio.sleep(1)  # Необязательно, но снижает риск пропустить апдейты
-
-    # 2. Затем запускаем фоновые задачи
-    notification_task = await start_notification_task(bot)
-
+    """
+    Основной метод для запуска бота и фоновых задач.
+    """
     try:
-        # 3. Запускаем бота с двойной страховкой (webhook + polling)
-        await dp.start_polling(bot, skip_updates=True)
-    finally:
-        # 4. Корректная остановка
-        notification_task.cancel()
+        # 1. Сначала сбрасываем все pending updates
+        await bot.delete_webhook(drop_pending_updates=True)
+        await asyncio.sleep(1)  # Необязательно, но снижает риск пропустить апдейты
+
+        # 2. Запускаем фоновые задачи
+        notification_task = asyncio.create_task(start_notification_task(bot))
+        cleanup_task = asyncio.create_task(start_notification_cleanup_task())
+
         try:
-            await notification_task
-        except asyncio.CancelledError:
-            logger.info("Задача отправки уведомлений отменена.")
+            # 3. Запускаем бота с двойной страховкой (webhook + polling)
+            await dp.start_polling(bot, skip_updates=True)
+        finally:
+            # 4. Корректная остановка фоновых задач
+            notification_task.cancel()
+            cleanup_task.cancel()
+
+            try:
+                await notification_task
+            except asyncio.CancelledError:
+                logger.info("Задача отправки уведомлений отменена.")
+
+            try:
+                await cleanup_task
+            except asyncio.CancelledError:
+                logger.info("Задача очистки уведомлений отменена.")
+
+    except Exception as e:
+        logger.error(f"Произошла критическая ошибка при запуске бота: {e}")
+        raise

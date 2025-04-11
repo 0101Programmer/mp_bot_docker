@@ -1,8 +1,7 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, pre_delete
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
-
-from .models import Notification, Appeal, AdminRequest
+from .models import Notification, Appeal, AdminRequest, User
 from .tools.main_logger import logger
 
 
@@ -20,27 +19,33 @@ def track_admin_request_status_change(sender, instance, **kwargs):
 
             # Если статус изменился
             if previous_status != current_status:
-                logger.info(f"Статус заявки {instance.pk} изменен с '{previous_status}' на '{current_status}'.")
+                logger.info(
+                    f"Статус заявки {instance.pk} изменен с '{previous_instance.get_status_display()}' "
+                    f"на '{instance.get_status_display()}'."
+                )
 
-                # Создаем уведомление с информацией о новом статусе
+                # Формируем текст уведомления
+                message = ""
+                if instance.status == 'approved':
+                    message = "Ваша заявка на административные права была одобрена."
+                elif instance.status == 'rejected':
+                    message = "Ваша заявка на административные права была отклонена."
+
+                # Создаем уведомление
                 try:
-                    if current_status == 'approved':
-                        message = "Ваша заявка на административные права была одобрена."
-                    elif current_status == 'rejected':
-                        message = "Ваша заявка на административные права была отклонена."
-
                     Notification.objects.create(
                         user=instance.user,
                         appeal=None,
-                        status=message,
+                        message=message,  # Используем поле message вместо status
                         sent=False
                     )
-                    logger.info(f"Уведомление создано для пользователя {instance.user.user_id}.")
+                    logger.info(f"Уведомление создано для пользователя {instance.user.id}.")
                 except IntegrityError as e:
                     logger.error(f"Ошибка при создании уведомления: {e}")
         except sender.DoesNotExist:
             # Если объект не существует (например, при создании), ничего не делаем
             pass
+
 
 @receiver(pre_save, sender=Appeal)
 def track_appeal_status_change(sender, instance, **kwargs):
@@ -56,22 +61,59 @@ def track_appeal_status_change(sender, instance, **kwargs):
 
             # Если статус изменился
             if previous_status != current_status:
-                logger.info(f"Статус обращения {instance.pk} изменен с '{previous_status}' на '{current_status}'.")
+                logger.info(
+                    f"Статус обращения {instance.pk} изменен с '{previous_instance.get_status_display()}' "
+                    f"на '{instance.get_status_display()}'."
+                )
 
                 # Получаем название комиссии (если она есть)
                 commission_name = instance.commission.name if instance.commission else "Неизвестная комиссия"
+
+                # Формируем текст уведомления
+                message = (
+                    f"Статус вашего обращения в комиссию '{commission_name}' "
+                    f"изменен на: {instance.get_status_display()}."
+                )
 
                 # Создаем уведомление с информацией о комиссии
                 try:
                     Notification.objects.create(
                         user=instance.user,
                         appeal=instance,
-                        status=f"Статус вашего обращения в комиссию '{commission_name}' изменен на: {current_status}",
+                        message=message,
                         sent=False
                     )
-                    logger.info(f"Уведомление создано для пользователя {instance.user.user_id}.")
+                    logger.info(f"Уведомление создано для пользователя {instance.user.id}.")
                 except IntegrityError as e:
                     logger.error(f"Ошибка при создании уведомления: {e}")
         except sender.DoesNotExist:
             # Если объект не существует (например, при создании), ничего не делаем
             pass
+
+
+@receiver(pre_delete, sender=AdminRequest)
+def update_user_status_on_delete(sender, instance, **kwargs):
+    """
+    Сигнал для изменения статуса пользователя перед удалением запроса.
+    Создает уведомление о снятии статуса администратора.
+    """
+    if instance.user.is_admin:
+        # Формируем текст уведомления
+        message = "Ваш статус администратора был отозван, но вы можете подать новую заявку."
+
+        # Создаем уведомление
+        try:
+            Notification.objects.create(
+                user=instance.user,
+                appeal=None,
+                message=message,
+                sent=False
+            )
+            logger.info(f"Уведомление о снятии статуса админа создано для пользователя {instance.user.id}.")
+        except IntegrityError as e:
+            logger.error(f"Ошибка при создании уведомления: {e}")
+
+        # Обновляем статус пользователя
+        instance.user.is_admin = False
+        instance.user.save(update_fields=['is_admin'])
+        logger.info(f"Статус администратора снят у пользователя {instance.user.id}.")

@@ -237,7 +237,7 @@ const deleteUser = async () => {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        admin_id: userStore.userData?.user_id, // Передаем ID администратора для проверки прав
+        admin_id: userStore.userData?.id,
       }),
     });
 

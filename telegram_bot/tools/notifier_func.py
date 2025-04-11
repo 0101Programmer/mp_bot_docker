@@ -1,6 +1,6 @@
 import asyncio
-
 from asgiref.sync import sync_to_async
+from aiogram.exceptions import TelegramBadRequest
 
 from ..models import Notification
 from .main_logger import logger
@@ -9,6 +9,7 @@ from .main_logger import logger
 async def send_pending_notifications(bot):
     """
     Проверяет наличие непосланных уведомлений и отправляет их пользователям.
+    Если чат не найден (chat not found), уведомление удаляется.
     :param bot: Экземпляр бота (aiogram.Bot).
     """
     while True:
@@ -25,16 +26,37 @@ async def send_pending_notifications(bot):
                 if telegram_id:  # Убедимся, что у пользователя есть Telegram ID
                     try:
                         # Отправляем сообщение пользователю
-                        await bot.send_message(telegram_id, notification.status)
+                        await bot.send_message(telegram_id, notification.message)
+
                         # Обновляем статус уведомления на "отправлено"
                         notification.sent = True
                         await sync_to_async(notification.save)()
-                        logger.info(f"Уведомление отправлено пользователю {user.user_id} (Telegram ID: {telegram_id})")
+                        logger.info(
+                            f"Уведомление отправлено пользователю {user.id} (Telegram ID: {telegram_id})"
+                        )
+
+                    except TelegramBadRequest as e:
+                        # Проверяем, является ли ошибка "chat not found"
+                        if "chat not found" in str(e):
+                            logger.error(
+                                f"Чат не найден для пользователя {user.id} (Telegram ID: {telegram_id}). Удаляем уведомление."
+                            )
+                            # Удаляем уведомление
+                            await sync_to_async(notification.delete)()
+                        else:
+                            # Логируем другие ошибки Telegram API
+                            logger.error(
+                                f"Не удалось отправить уведомление пользователю {user.id}: {e}"
+                            )
+
                     except Exception as e:
-                        # Логируем ошибку, если сообщение не удалось отправить
-                        logger(f"Не удалось отправить уведомление пользователю {user.user_id}: {e}")
+                        # Логируем остальные ошибки
+                        logger.error(
+                            f"Произошла ошибка при отправке уведомления пользователю {user.id}: {e}"
+                        )
+
                 else:
-                    logger.error(f"У пользователя {user.user_id} отсутствует Telegram ID.")
+                    logger.error(f"У пользователя {user.id} отсутствует Telegram ID.")
 
             # Ждем некоторое время перед следующей проверкой
             await asyncio.sleep(60)  # Проверяем каждые 60 секунд

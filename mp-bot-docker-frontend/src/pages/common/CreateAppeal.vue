@@ -135,7 +135,7 @@ const submitAppeal = async () => {
   try {
     const formData = new FormData();
     formData.append('appeal_text', appealText.value);
-    formData.append('user_id', userStore.userData.user_id);
+    formData.append('user_id', userStore.userData.id);
     formData.append('commission_id', selectedCommission.value || '');
     if (contactInfo.value) formData.append('contact_info', contactInfo.value);
     if (file.value) formData.append('file', file.value);

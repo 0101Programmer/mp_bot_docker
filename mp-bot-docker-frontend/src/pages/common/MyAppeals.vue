@@ -13,6 +13,16 @@ const router = useRouter();
 const isLoading = ref(true);
 const appeals = ref([]);
 
+// Функция для преобразования статуса в русский текст
+const getStatusDisplay = (status: string) => {
+  const statusMap = {
+    'new': 'Новое',
+    'processed': 'Обработано',
+    'rejected': 'Отклонено'
+  };
+  return statusMap[status] || status;
+};
+
 // Функция для подтверждения удаления
 const confirmDelete = (appealId: number) => {
   const isConfirmed = confirm(
@@ -27,7 +37,7 @@ const confirmDelete = (appealId: number) => {
 const deleteAppeal = async (appealId: number) => {
   try {
     // Получаем user_id из хранилища
-    const userId = userStore.userData?.user_id;
+    const userId = userStore.userData?.id;
     if (!userId) {
       throw new Error('User ID не найден.');
     }
@@ -66,7 +76,7 @@ onMounted(async () => {
     }
 
     // Загружаем список обращений
-    const userId = userStore.userData.user_id; // Получаем user_id из хранилища
+    const userId = userStore.userData.id; // Получаем user_id из хранилища
     const response = await fetch(`${configStore.backendBaseUrl}/api/v1/user/appeals/?user_id=${userId}`, {
       method: 'GET',
       headers: {
@@ -91,20 +101,16 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-start p-4">
-    <!-- Приветственное сообщение -->
     <h1 class="text-3xl font-bold text-blue-400 mt-8 mb-6 text-center">
       Мои заявки
     </h1>
 
-    <!-- Если данные загружаются -->
     <div v-if="isLoading" class="text-gray-400">
       Загрузка данных...
     </div>
 
-    <!-- Если данные загружены -->
     <div v-else-if="appeals.length > 0" class="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg overflow-hidden">
       <table class="w-full text-sm text-left text-gray-400">
-        <!-- Заголовок таблицы -->
         <thead class="text-xs uppercase bg-gray-700 text-gray-300">
           <tr>
             <th scope="col" class="px-6 py-3">ID</th>
@@ -116,7 +122,6 @@ onMounted(async () => {
           </tr>
         </thead>
 
-        <!-- Тело таблицы -->
         <tbody>
           <tr v-for="appeal in appeals" :key="appeal.id" class="border-b border-gray-700 hover:bg-gray-700">
             <td class="px-6 py-4">{{ appeal.id }}</td>
@@ -135,7 +140,7 @@ onMounted(async () => {
               </a>
               <span v-else>Нет файла</span>
             </td>
-            <td class="px-6 py-4">{{ appeal.status }}</td>
+            <td class="px-6 py-4">{{ getStatusDisplay(appeal.status) }}</td>
             <td class="px-6 py-4">
               <button
                 @click="confirmDelete(appeal.id)"
@@ -149,7 +154,6 @@ onMounted(async () => {
       </table>
     </div>
 
-    <!-- Если данных нет -->
     <div v-else class="text-gray-400">
       Нет данных для отображения.
     </div>

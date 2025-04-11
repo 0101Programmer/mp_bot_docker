@@ -65,19 +65,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useUserStore } from '@/stores/userStore.ts';
-import { useConfigStore } from '@/stores/configStore.ts'; // Импортируем хранилище конфигурации
+import { useConfigStore } from '@/stores/configStore.ts';
 import axios from 'axios';
 
 // Определяем типы
-interface UserData {
-  user_id: number;
-  telegram_id: string;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-  is_admin: boolean;
-}
-
 interface CheckPendingResponse {
   has_pending_request: boolean;
   last_rejected_request: {
@@ -102,22 +93,22 @@ async function checkPendingRejectedRequest() {
     isLoading.value = true;
 
     // Проверяем, загружены ли данные пользователя
-    if (!userStore.userData?.user_id) {
+    if (!userStore.userData?.id) {
       await userStore.loadUserData();
     }
 
-    if (!userStore.userData?.user_id) {
+    if (!userStore.userData?.id) {
       errorMessage.value = 'Данные пользователя не загружены. Пожалуйста, авторизуйтесь.';
       return;
     }
 
     const response = await axios.get<CheckPendingResponse>(
-      `${configStore.backendBaseUrl}/api/v1/user/admin-request/check-pending-rejected-accepted/${userStore.userData.user_id}`
+      `${configStore.backendBaseUrl}/api/v1/user/admin-request/check-pending-rejected-accepted/${userStore.userData.id}`
     );
 
     hasPendingRequest.value = response.data.has_pending_request;
     lastRejectedRequest.value = response.data.last_rejected_request;
-    is_admin.value = response.data.is_admin; // Сохраняем значение is_admin
+    is_admin.value = response.data.is_admin;
   } catch (error) {
     console.error('Ошибка при проверке активной заявки:', error);
     errorMessage.value = 'Не удалось проверить наличие активной заявки.';
@@ -137,19 +128,19 @@ async function submitForm() {
     isSubmitting.value = true;
 
     // Проверяем, загружены ли данные пользователя
-    if (!userStore.userData?.user_id) {
+    if (!userStore.userData?.id) {
       await userStore.loadUserData();
     }
 
-    if (!userStore.userData?.user_id) {
+    if (!userStore.userData?.id) {
       errorMessage.value = 'Данные пользователя не загружены. Пожалуйста, авторизуйтесь.';
       return;
     }
 
     const response = await axios.post(
-      `${configStore.backendBaseUrl}/api/v1/user/admin-request/`, // Используем backendBaseUrl
+      `${configStore.backendBaseUrl}/api/v1/user/admin-request/`,
       {
-        user_id: userStore.userData.user_id,
+        user_id: userStore.userData.id,
         admin_position: formData.value.admin_position,
       }
     );

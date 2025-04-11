@@ -6,7 +6,6 @@ class Command(BaseCommand):
     help = 'Запуск Telegram-бота (aiogram 3.x)'
 
     def handle(self, *args, **options):
-        self.stdout.write("Запуск Telegram-бота...")
         try:
             # Запускаем бота через asyncio.run
             asyncio.run(start_bot())

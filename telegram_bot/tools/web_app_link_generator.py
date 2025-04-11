@@ -10,5 +10,4 @@ def generate_personal_link(telegram_id: int) -> str:
     """
     token = generate_token(telegram_id)
     personal_link = f"{TELEGRAM_BOT_BACKEND_BASE_URL}/api/v1/service/frontend_redirect_url/{token}"
-    logger.info(f"Generated personal link: {personal_link}")
     return personal_link

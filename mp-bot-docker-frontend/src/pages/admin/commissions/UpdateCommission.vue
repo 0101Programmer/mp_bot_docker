@@ -16,6 +16,18 @@
       @submit.prevent="updateCommission"
       class="w-full max-w-2xl bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6"
     >
+      <!-- Информация о датах -->
+      <div class="grid grid-cols-2 gap-4 mb-6 text-sm text-gray-400">
+        <div class="flex flex-col">
+          <span class="font-medium">Дата создания:</span>
+          <span class="text-white">{{ formatDateTime(created_at) }}</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-medium">Последнее обновление:</span>
+          <span class="text-white">{{ formatDateTime(updated_at) }}</span>
+        </div>
+      </div>
+
       <!-- Поле для названия комиссии -->
       <div class="mb-4">
         <label for="commission_name" class="block text-sm font-medium text-gray-300">Название комиссии</label>
@@ -71,23 +83,42 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/userStore.ts';
-import { useConfigStore } from '@/stores/configStore'; // Импортируем configStore
+import { useConfigStore } from '@/stores/configStore';
 
-// Инициализируем роутер, текущий маршрут, хранилище пользователя и хранилище конфигурации
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
-const configStore = useConfigStore(); // Инициализируем configStore
+const configStore = useConfigStore();
 
-// Получаем ID комиссии из параметров маршрута
-const commissionId = route.params.id; // ID комиссии
+const commissionId = route.params.id;
 
-// Состояния для полей формы
+// Состояния формы
 const name = ref('');
 const description = ref('');
+const created_at = ref(''); // Добавлено: дата создания
+const updated_at = ref(''); // Добавлено: дата обновления
 const errorMessage = ref<string>('');
 const isLoading = ref(false);
-const isCommissionFound = ref(true); // Флаг, найдена ли комиссия
+const isCommissionFound = ref(true);
+
+// Функция форматирования даты и времени
+const formatDateTime = (dateString: string): string => {
+  if (!dateString) return '—';
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime())
+      ? 'Некорректная дата'
+      : date.toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+  } catch {
+    return 'Некорректная дата';
+  }
+};
 
 // Загрузка данных комиссии
 onMounted(async () => {
@@ -97,14 +128,16 @@ onMounted(async () => {
       const data = await response.json();
       name.value = data.name;
       description.value = data.description;
+      created_at.value = data.created_at; // Получаем дату создания
+      updated_at.value = data.updated_at; // Получаем дату обновления
     } else {
       console.error('Ошибка при загрузке данных комиссии');
-      isCommissionFound.value = false; // Комиссия не найдена
+      isCommissionFound.value = false;
       errorMessage.value = 'Комиссия с указанным ID не найдена.';
     }
   } catch (error) {
     console.error('Ошибка сети:', error);
-    isCommissionFound.value = false; // Комиссия не найдена
+    isCommissionFound.value = false;
     errorMessage.value = 'Произошла ошибка при загрузке данных комиссии.';
   }
 });
@@ -119,25 +152,25 @@ const updateCommission = async () => {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userStore.userData?.user_id, // Передаем user_id из хранилища
+        user_id: userStore.userData?.id,
         name: name.value,
         description: description.value,
       }),
     });
 
     if (response.ok) {
+      const updatedData = await response.json();
+      updated_at.value = updatedData.updated_at; // Обновляем дату изменения
       alert('Комиссия успешно обновлена!');
-      await router.push('/admin_panel'); // Перенаправляем на панель администратора
+      await router.push('/admin_panel');
     } else {
       const errorData = await response.json();
       if (errorData.name || errorData.description) {
-        // Если есть ошибки валидации, выводим их
         errorMessage.value = [
           ...(errorData.name || []),
           ...(errorData.description || []),
         ].join(' ');
       } else {
-        // В противном случае выводим общее сообщение
         errorMessage.value = errorData.message || 'Произошла ошибка при обновлении комиссии.';
       }
     }
