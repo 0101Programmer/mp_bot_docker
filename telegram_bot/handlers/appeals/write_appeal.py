@@ -9,8 +9,9 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 from django.core.files import File
+from django.core.exceptions import ObjectDoesNotExist
 
-from ...models import CommissionInfo, Appeal, User
+from ...models import CommissionInfo, Appeal, User, StatusChoices
 from ...tools.main_logger import logger
 
 # Паттерны для проверки email и номера телефона
@@ -20,18 +21,37 @@ PHONE_PATTERN = r'^\+7\d{10}$'  # Российский номер в между�
 # Функция для сохранения обращения в базу данных
 @sync_to_async
 def save_appeal_to_db(data, telegram_id, django_file=None, original_file_name=None):
-    user = User.objects.get(telegram_id=telegram_id)
-    commission = CommissionInfo.objects.get(id=data["commission_id"])
+    """
+    Сохраняет обращение в базу данных.
+    """
+    try:
+        # Получаем пользователя по telegram_id
+        user = User.objects.get(telegram_id=telegram_id)
+    except ObjectDoesNotExist:
+        raise ValueError("Пользователь с указанным telegram_id не найден.")
+
+    try:
+        # Получаем комиссию по ID
+        commission = CommissionInfo.objects.get(id=data["commission_id"])
+    except ObjectDoesNotExist:
+        raise ValueError("Комиссия с указанным ID не найдена.")
+
+    # Создаем объект обращения
     appeal = Appeal(
         user=user,
         commission=commission,
         appeal_text=data["appeal_text"],
         contact_info=data.get("contact_info"),
-        status="Новое"
+        status=StatusChoices.NEW
     )
+
+    # Если файл передан, сохраняем его
     if django_file and original_file_name:
-        appeal.file_path.save(original_file_name, django_file)  # Сохраняем файл через FileField
+        appeal.file_path.save(original_file_name, django_file)
+
+    # Сохраняем обращение в базу данных
     appeal.save()
+    return appeal
 
 # Создаем класс для хранения состояний
 class AppealForm(StatesGroup):

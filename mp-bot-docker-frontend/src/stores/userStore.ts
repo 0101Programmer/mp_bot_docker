@@ -27,8 +27,11 @@ export const useUserStore = defineStore('user', {
       localStorage.setItem('authToken', token);
     },
     clearUserData() {
+      // Очищаем состояние Pinia
       this.userData = null;
       this.authToken = null;
+
+      // Очищаем localStorage
       localStorage.removeItem('authToken');
     },
     getApiUrl(endpoint: string): string {
