@@ -14,7 +14,7 @@ def get_admin_main_menu_keyboard():
     builder.button(text="Заявки на получение администратора", callback_data="admin_requests")
     builder.button(text="Действия с комиссиями", callback_data="commission_actions")
     builder.button(text="Просмотр обращений", callback_data="view_appeals")
-    builder.button(text="Действия с пользователями", callback_data="user_actions")
+    builder.button(text="Удалить пользователя", callback_data="delete_user")
     builder.adjust(1)
     return builder.as_markup()
 

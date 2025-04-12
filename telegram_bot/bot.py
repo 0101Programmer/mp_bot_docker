@@ -14,7 +14,7 @@ from telegram_bot.handlers.admin_requests.admin_appeal import router as admin_ap
 from telegram_bot.handlers.admin_commands.manage_commission import router as manage_commissions_router
 from telegram_bot.handlers.admin_commands.manage_admin_requests import router as manage_admin_requests_router
 from telegram_bot.handlers.admin_commands.manage_appeals import router as manage_appeals_router
-from telegram_bot.handlers.admin_commands.manage_users import router as manage_users_router
+from telegram_bot.handlers.admin_commands.delete_user import router as manage_users_router
 from telegram_bot.handlers.general.web_app_enter import router as web_app_enter_router
 from .middlewares.auth_middleware import CheckUserRegisteredMiddleware
 

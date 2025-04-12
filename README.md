@@ -154,7 +154,7 @@ NOTIFICATION_CLEANUP_INTERVAL_HOURS=8
 
 1. **Запуск без Docker:**
    - Установить `USE_DOCKER=0` в `.env`.
-   - Запустить Redis (через bash) `~$ sudo systemctl start redis`.
+   - Запустить Redis (через bash, и если не запущен) `~$ sudo systemctl start redis`.
    - Ввести в терминал: `python no_docker_start_project.py`.
 
 
