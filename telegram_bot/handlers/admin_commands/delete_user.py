@@ -5,7 +5,6 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-# Импортируем модель User
 from ...models import User
 
 # Создаем роутер
@@ -27,7 +26,7 @@ def get_cancel_keyboard():
 async def request_user_id(callback: CallbackQuery, state: FSMContext):
     # Отправляем сообщение с запросом ID и кнопкой "Отменить поиск"
     await callback.message.answer(
-        "Введите ID пользователя, которого хотите удалить:",
+        "Введите ID пользователя (primary key), которого хотите удалить:",
         reply_markup=get_cancel_keyboard()
     )
     await state.set_state(DeleteUserStates.waiting_for_user_id)
@@ -48,7 +47,7 @@ async def process_user_id(message: Message, state: FSMContext):
         return
 
     # Асинхронный запрос к базе данных
-    user = await sync_to_async(User.objects.filter(telegram_id=user_id).first)()
+    user = await sync_to_async(User.objects.filter(id=user_id).first)()
     if not user:
         await message.answer(
             "Пользователь с таким ID не найден. Попробуйте снова.",
@@ -58,13 +57,14 @@ async def process_user_id(message: Message, state: FSMContext):
 
     # Создаем клавиатуру с кнопкой "Удалить"
     builder = InlineKeyboardBuilder()
-    builder.button(text="Удалить", callback_data=f"confirm_delete_{user.telegram_id}")
+    builder.button(text="Удалить", callback_data=f"confirm_delete_{user.id}")
     builder.adjust(1)
 
     # Отправляем карточку пользователя
     user_card = (
         f"Пользователь:\n"
-        f"ID: {user.telegram_id}\n"
+        f"ID (PK): {user.id}\n"
+        f"Telegram ID: {user.telegram_id}\n"
         f"Имя: {user.first_name}\n"
         f"Фамилия: {user.last_name}\n"
         f"Username: @{user.username}\n"
@@ -82,10 +82,10 @@ async def confirm_delete_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[-1])  # Извлекаем ID пользователя из callback_data
 
     # Асинхронный запрос к базе данных
-    user = await sync_to_async(User.objects.filter(telegram_id=user_id).first)()
+    user = await sync_to_async(User.objects.filter(id=user_id).first)()
     if user:
         await sync_to_async(user.delete)()
-        await callback.message.answer(f"Пользователь с ID {user_id} успешно удален.")
+        await callback.message.answer(f"Пользователь с ID (PK) {user_id} успешно удален.")
     else:
         await callback.message.answer("Пользователь не найден.")
 
