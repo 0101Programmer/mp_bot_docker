@@ -10,7 +10,9 @@ from ....tools.check_admin_status import is_user_admin
 class AppealListForAdminView(APIView):
 
     def get(self, request):
-        appeals = Appeal.objects.all()
+
+        # Загрузка всех обращений с оптимизацией запроса
+        appeals = Appeal.objects.select_related('commission').all()
         serializer = AppealSerializerForAdmin(appeals, many=True)
         return Response(serializer.data, status=200)
 

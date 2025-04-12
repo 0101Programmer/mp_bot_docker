@@ -120,6 +120,17 @@ const truncateText = (text: string, maxLength: number = 50): string => {
   }
   return text;
 };
+
+// Функция для форматирования даты
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+};
 </script>
 
 <template>
@@ -132,52 +143,65 @@ const truncateText = (text: string, maxLength: number = 50): string => {
       Загрузка данных...
     </div>
 
-    <div v-else-if="appeals.length > 0" class="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-      <table class="w-full text-sm text-left text-gray-400">
-        <thead class="text-xs uppercase bg-gray-700 text-gray-300">
-          <tr>
-            <th scope="col" class="px-6 py-3">ID</th>
-            <th scope="col" class="px-6 py-3">Текст заявки</th>
-            <th scope="col" class="px-6 py-3">Контактная информация</th>
-            <th scope="col" class="px-6 py-3">Файл</th>
-            <th scope="col" class="px-6 py-3">Статус</th>
-            <th scope="col" class="px-6 py-3">Действия</th>
-          </tr>
-        </thead>
+    <div v-else-if="appeals.length > 0" class="w-full max-w-7xl bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+      <!-- Обертка для таблицы с горизонтальной прокруткой -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-400 min-w-max">
+          <thead class="text-xs uppercase bg-gray-700 text-gray-300">
+            <tr>
+              <th scope="col" class="px-4 py-3">ID</th>
+              <th scope="col" class="px-4 py-3">Текст заявки</th>
+              <th scope="col" class="px-4 py-3">Комиссия</th>
+              <th scope="col" class="px-4 py-3">Создано</th>
+              <th scope="col" class="px-4 py-3">Обновлено</th>
+              <th scope="col" class="px-4 py-3">Контактная информация</th>
+              <th scope="col" class="px-4 py-3">Файл</th>
+              <th scope="col" class="px-4 py-3">Статус</th>
+              <th scope="col" class="px-4 py-3">Действия</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <tr v-for="appeal in appeals" :key="appeal.id" class="border-b border-gray-700 hover:bg-gray-700">
-            <td class="px-6 py-4">{{ appeal.id }}</td>
-            <td
-              class="px-6 py-4 max-w-[300px] break-words whitespace-normal cursor-pointer text-blue-400 hover:text-blue-300 transition-colors duration-200"
-              @click="openModal(appeal.appeal_text)"
-            >
-              {{ truncateText(appeal.appeal_text) }}
-            </td>
-            <td class="px-6 py-4">{{ appeal.contact_info || '-' }}</td>
-            <td class="px-6 py-4">
-              <a
-                v-if="appeal.file_path"
-                :href="`${configStore.backendBaseUrl}/api/v1/service/download/${appeal.id}`"
-                class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
-                target="_blank"
+          <tbody>
+            <tr v-for="appeal in appeals" :key="appeal.id" class="border-b border-gray-700 hover:bg-gray-700">
+              <td class="px-4 py-4">{{ appeal.id }}</td>
+              <td
+                class="px-4 py-4 max-w-[200px] break-words whitespace-normal cursor-pointer text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                @click="openModal(appeal.appeal_text)"
               >
-                Скачать файл
-              </a>
-              <span v-else>Нет файла</span>
-            </td>
-            <td class="px-6 py-4">{{ getStatusDisplay(appeal.status) }}</td>
-            <td class="px-6 py-4">
-              <button
-                @click="confirmDelete(appeal.id)"
-                class="text-red-500 hover:text-red-400 transition-colors duration-200"
-              >
-                Удалить
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                {{ truncateText(appeal.appeal_text) }}
+              </td>
+              <td class="px-4 py-4 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                {{ appeal.commission_name || 'Нет комиссии' }}
+              </td>
+              <td class="px-4 py-4">{{ formatDate(appeal.created_at) }}</td>
+              <td class="px-4 py-4">{{ formatDate(appeal.updated_at) }}</td>
+              <td class="px-4 py-4 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                {{ appeal.contact_info || '-' }}
+              </td>
+              <td class="px-4 py-4">
+                <a
+                  v-if="appeal.file_path"
+                  :href="`${configStore.backendBaseUrl}/api/v1/service/download/${appeal.id}`"
+                  class="text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                  target="_blank"
+                >
+                  Скачать файл
+                </a>
+                <span v-else>Нет файла</span>
+              </td>
+              <td class="px-4 py-4">{{ getStatusDisplay(appeal.status) }}</td>
+              <td class="px-4 py-4">
+                <button
+                  @click="confirmDelete(appeal.id)"
+                  class="text-red-500 hover:text-red-400 transition-colors duration-200"
+                >
+                  Удалить
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div v-else class="text-gray-400">

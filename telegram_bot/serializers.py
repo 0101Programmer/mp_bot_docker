@@ -85,10 +85,19 @@ class AppealSerializerForAdmin(serializers.ModelSerializer):
     """
     Сериализатор для модели Appeal (для администраторов).
     """
+    commission_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Appeal
         fields = '__all__'
 
+    def get_commission_name(self, obj):
+        """
+        Получение названия комиссии (если она указана).
+        """
+        if obj.commission:
+            return obj.commission.name
+        return "Комиссия не найдена"
 
 class CommissionInfoSerializer(serializers.ModelSerializer):
     """

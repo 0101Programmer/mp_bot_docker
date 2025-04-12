@@ -11,7 +11,7 @@ class AppealListView(APIView):
         if not user_id:
             return Response({"error": "user_id is required"}, status=400)
 
-        # Получаем все заявки для указанного пользователя
-        appeals = Appeal.objects.filter(user_id=user_id)
+        # Получаем все заявки для указанного пользователя с использованием select_related
+        appeals = Appeal.objects.filter(user_id=user_id).select_related('commission')
         serializer = AppealSerializer(appeals, many=True)
         return Response(serializer.data)

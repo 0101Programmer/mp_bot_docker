@@ -19,7 +19,7 @@
             <p>Дата создания: {{ formatDateTime(selectedAppeal.created_at) }}</p>
             <p>Последнее обновление: {{ formatDateTime(selectedAppeal.updated_at) }}</p>
             <p v-if="selectedAppeal.contact_info">Контакты: {{ selectedAppeal.contact_info }}</p>
-            <p v-if="selectedAppeal.commission">Комиссия: {{ selectedAppeal.commission.name }}</p>
+            <p v-if="selectedAppeal.commission">Комиссия: {{ selectedAppeal.commission_name }}</p>
           </div>
         </div>
       </div>
@@ -57,7 +57,7 @@
               <th scope="col" class="px-4 py-3 sticky left-0 bg-gray-700 z-10">ID</th>
               <th scope="col" class="px-4 py-3 min-w-[120px]">Дата создания</th>
               <th scope="col" class="px-4 py-3 min-w-[120px]">Обновлено</th>
-              <th scope="col" class="px-4 py-3 min-w-[150px]">Комиссия</th> <!-- Новая колонка -->
+              <th scope="col" class="px-4 py-3 min-w-[150px]">Комиссия</th>
               <th scope="col" class="px-4 py-3 min-w-[200px]">Текст заявки</th>
               <th scope="col" class="px-4 py-3 min-w-[150px]">Контакты</th>
               <th scope="col" class="px-4 py-3 min-w-[100px]">Файл</th>
@@ -83,7 +83,7 @@
                 </div>
               </td>
               <td class="px-4 py-4 max-w-[150px] break-words">
-                {{ appeal.commission?.name || 'Не указана' }}
+                {{ appeal.commission_name || 'Не указана' }}
               </td>
               <td class="px-4 py-4 max-w-[200px]">
                 <button
