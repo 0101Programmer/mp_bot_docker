@@ -4,9 +4,6 @@ def merge_env_files(env_folder=".env_collection", output_file=".env"):
     """
     Объединяет все .env файлы из папки env_folder в один файл output_file,
     игнорируя комментарии и пустые строки.
-
-    :param env_folder: Путь к папке с .env файлами (по умолчанию ".env_collection").
-    :param output_file: Путь к выходному файлу (по умолчанию ".env").
     """
     # Получаем список всех .env файлов в папке
     try:
@@ -23,17 +20,20 @@ def merge_env_files(env_folder=".env_collection", output_file=".env"):
         return
 
     # Открываем выходной файл для записи
-    with open(output_file, "w") as outfile:
+    with open(output_file, "w", encoding="utf-8") as outfile:
         for env_file in env_files:
             file_path = os.path.join(env_folder, env_file)
             print(f"Обрабатываю файл: {file_path}")
-            with open(file_path, "r") as infile:
-                # Копируем только непустые строки, которые не являются комментариями
-                for line in infile:
-                    stripped_line = line.strip()
-                    if stripped_line and not stripped_line.startswith("#"):
-                        # Добавляем перевод строки после каждой записи
-                        outfile.write(stripped_line + "\n")
+            try:
+                # Открываем каждый файл с явным указанием кодировки UTF-8
+                with open(file_path, "r", encoding="utf-8") as infile:
+                    # Копируем только непустые строки, которые не являются комментариями
+                    for line in infile:
+                        stripped_line = line.strip()
+                        if stripped_line and not stripped_line.startswith("#"):
+                            outfile.write(stripped_line + "\n")
+            except UnicodeDecodeError as e:
+                print(f"Ошибка при чтении файла {file_path}: {e}")
 
     print(f"Все файлы успешно объединены в '{output_file}'.")
 

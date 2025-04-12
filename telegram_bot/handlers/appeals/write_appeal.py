@@ -1,5 +1,6 @@
 import os
 import re
+from decouple import config
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
@@ -17,6 +18,13 @@ from ...tools.main_logger import logger
 # Паттерны для проверки email и номера телефона
 EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 PHONE_PATTERN = r'^\+7\d{10}$'  # Российский номер в международном формате: +7XXXXXXXXXX
+
+# Длинна текста
+MIN_TXT_LENGTH = int(config('MIN_TXT_LENGTH'))
+MAX_TXT_LENGTH = int(config('MAX_TXT_LENGTH'))
+
+# Максимальный размер файла (в байтах)
+MAX_FILE_SIZE = int(config('MAX_FILE_SIZE'))
 
 # Функция для сохранения обращения в базу данных
 @sync_to_async
@@ -192,9 +200,14 @@ async def process_appeal_text(message: Message, state: FSMContext):
         appeal_text = message.text
 
         # Проверяем длину текста
-        if len(appeal_text) < 50:
+        if len(appeal_text) < MIN_TXT_LENGTH:
             await message.answer(
-                "Обращение слишком короткое. Пожалуйста, напишите более подробное обращение (минимум 50 символов)."
+                "Обращение слишком короткое. Пожалуйста, напишите более подробное обращение (минимум 100 символов)."
+            )
+            return
+        elif len(appeal_text) > MAX_TXT_LENGTH:
+            await message.answer(
+                "Обращение слишком длинное. Пожалуйста, сократите текст до 300 символов."
             )
             return
 
@@ -258,6 +271,7 @@ async def handle_invalid_file(message: Message):
         logger.error(f"Ошибка при обработке текстового сообщения: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
+
 # Обработчик загрузки файла
 @router.message(AppealForm.attaching_file, F.photo | F.document)
 async def process_file_upload(message: Message, state: FSMContext):
@@ -266,18 +280,27 @@ async def process_file_upload(message: Message, state: FSMContext):
         if message.photo:
             # Получаем информацию о фото
             file_id = message.photo[-1].file_id
-            file = await message.bot.get_file(file_id)
+            file_info = await message.bot.get_file(file_id)
+            file_size = message.photo[-1].file_size  # Размер фото в байтах
             file_extension = ".jpg"  # Фото всегда сохраняем как .jpg
             original_file_name = f"{message.from_user.id}_photo{file_extension}"
 
         elif message.document:
             # Получаем информацию о документе
             file_id = message.document.file_id
-            file = await message.bot.get_file(file_id)
+            file_info = await message.bot.get_file(file_id)
+            file_size = message.document.file_size  # Размер документа в байтах
             original_file_name = message.document.file_name
 
         else:
             await message.answer("Пожалуйста, отправьте фото или документ.")
+            return
+
+        # Проверяем размер файла
+        if file_size > MAX_FILE_SIZE:
+            await message.answer(
+                f"Размер файла слишком большой. Максимальный допустимый размер: {MAX_FILE_SIZE // (1024 * 1024)} MB."
+            )
             return
 
         # Путь к временной папке
@@ -288,7 +311,7 @@ async def process_file_upload(message: Message, state: FSMContext):
         temp_file_path = os.path.join(temp_dir, original_file_name)
 
         # Скачиваем файл во временную папку
-        await message.bot.download_file(file.file_path, temp_file_path)
+        await message.bot.download_file(file_info.file_path, temp_file_path)
 
         # Открываем временный файл для загрузки через Django
         with open(temp_file_path, 'rb') as f:
