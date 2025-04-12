@@ -43,12 +43,19 @@ async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardB
     needs_expansion = len(appeal.appeal_text) > preview_length
     display_text = appeal.appeal_text[:preview_length] + "..." if needs_expansion else appeal.appeal_text
 
+    # Форматируем даты
+    created_at_formatted = appeal.created_at.strftime("%d.%m.%Y %H:%M")
+    updated_at_formatted = appeal.updated_at.strftime("%d.%m.%Y %H:%M")
+
     # Формируем текст
     response = (
         f"📌 Обращение №{appeal.id}\n"
         f"{status_emoji} Статус: {status_display}\n"
         f"👥 Комиссия: {commission_name}\n"
-        f"📝 Текст: {display_text}"
+        f"📝 Текст: {display_text}\n"
+        f"📞 Контактная информация: {appeal.contact_info or 'Не указана'}\n"
+        f"📅 Дата создания: {created_at_formatted}\n"
+        f"🔄 Последнее обновление: {updated_at_formatted}"
     )
 
     # Создаем клавиатуру
@@ -58,11 +65,14 @@ async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardB
     if needs_expansion:
         builder.button(text="📄 Показать полностью", callback_data=f"show_full:{appeal.id}")
 
+    # Кнопка "Удалить"
     builder.button(text="🗑 Удалить", callback_data=f"delete_appeal:{appeal.id}")
 
+    # Кнопка "Открыть файл", если файл прикреплен
     if appeal.file_path:
         builder.button(text="📎 Открыть файл", callback_data=f"view_file:{appeal.id}")
 
+    # Настройка расположения кнопок
     builder.adjust(1)
 
     return response, builder

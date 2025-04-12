@@ -1,5 +1,7 @@
 from django.contrib import admin, messages
 from .models import User, CommissionInfo, Appeal, Notification, AdminRequest
+from .tools.main_logger import logger
+
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -44,20 +46,25 @@ class AdminRequestAdmin(admin.ModelAdmin):
         """
         Массовое действие: Одобрить выбранные заявки.
         """
-        for admin_request in queryset.filter(status='pending'):
-            # Обновляем статус заявки
-            admin_request.status = 'approved'
-            admin_request.save()
+        pending_requests = queryset.filter(status__iexact='pending')
+        count = pending_requests.count()
 
-            # Обновляем статус пользователя
-            user = admin_request.user
-            user.is_admin = True
-            user.save()
+        for admin_request in pending_requests:
+            try:
+                # Обновляем статус заявки
+                admin_request.status = 'approved'
+                admin_request.save()
 
-        # Отображаем сообщение об успешном выполнении
+                # Обновляем статус пользователя
+                user = admin_request.user
+                user.is_admin = True
+                user.save()
+            except Exception as e:
+                logger.error(f"Ошибка при обработке заявки {admin_request.id}: {e}")
+
         self.message_user(
             request,
-            f"{queryset.filter(status='pending').count()} заявок успешно одобрено.",
+            f"{count} заявок успешно одобрено.",
             messages.SUCCESS
         )
 
@@ -67,16 +74,21 @@ class AdminRequestAdmin(admin.ModelAdmin):
         """
         Массовое действие: Отклонить выбранные заявки.
         """
-        for admin_request in queryset.filter(status='pending'):
-            # Обновляем статус заявки и добавляем комментарий
-            admin_request.status = 'rejected'
-            admin_request.comment = "Администратор не одобрил заявку."  # Пример комментария
-            admin_request.save()
+        pending_requests = queryset.filter(status__iexact='pending')
+        count = pending_requests.count()
 
-        # Отображаем сообщение об успешном выполнении
+        for admin_request in pending_requests:
+            try:
+                # Обновляем статус заявки и добавляем комментарий
+                admin_request.status = 'rejected'
+                admin_request.comment = "Администратор не одобрил заявку."
+                admin_request.save()
+            except Exception as e:
+                logger.error(f"Ошибка при обработке заявки {admin_request.id}: {e}")
+
         self.message_user(
             request,
-            f"{queryset.filter(status='pending').count()} заявок успешно отклонено.",
+            f"{count} заявок успешно отклонено.",
             messages.SUCCESS
         )
 
