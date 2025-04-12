@@ -140,27 +140,30 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Настройка Redis DB
-
-REDIS_HOST = config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')
-REDIS_PORT = config('REDIS_PORT')
-REDIS_DB = config('REDIS_DB')
-
 # Настройка кеширования
+redis_host = config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')
+redis_port = config('REDIS_PORT')
+redis_db = config('REDIS_DB')
+
+if int(config('USE_DOCKER')):
+    redis_location = f'redis://{redis_host}:{redis_port}/{redis_db}'
+else:
+    redis_password = config('REDIS_PASS')
+    redis_location = f'redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}'
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f'redis://{config('REDIS_HOST') if int(config('USE_DOCKER')) else config('NO_DOCKER_REDIS_HOST')}:{config('REDIS_PORT')}/{config('REDIS_DB')}',
+        'LOCATION': redis_location,
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'SOCKET_CONNECT_TIMEOUT': 5,  # Таймаут подключения
-            'SOCKET_TIMEOUT': 5,         # Таймаут операций
-            'IGNORE_EXCEPTIONS': True,   # Игнорировать ошибки Redis
+            'PASSWORD': '' if int(config('USE_DOCKER')) else config('REDIS_PASS'),
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
         },
-        'KEY_PREFIX': 'telegram_bot',          # Префикс для ключей (опционально)
+        'KEY_PREFIX': 'telegram_bot',
     }
 }
-
 
 # Логирование
 LOGGING = {

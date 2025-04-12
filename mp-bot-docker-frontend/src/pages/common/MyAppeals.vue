@@ -13,6 +13,10 @@ const router = useRouter();
 const isLoading = ref(true);
 const appeals = ref([]);
 
+// Состояние для модального окна
+const isModalOpen = ref(false); // Открыто ли модальное окно
+const selectedAppealText = ref(''); // Текст выбранного обращения
+
 // Функция для преобразования статуса в русский текст
 const getStatusDisplay = (status: string) => {
   const statusMap = {
@@ -97,6 +101,25 @@ onMounted(async () => {
     isLoading.value = false; // Завершаем загрузку
   }
 });
+
+// Функция для открытия модального окна
+const openModal = (text: string) => {
+  selectedAppealText.value = text; // Устанавливаем текст для модального окна
+  isModalOpen.value = true; // Открываем модальное окно
+};
+
+// Функция для закрытия модального окна
+const closeModal = () => {
+  isModalOpen.value = false; // Закрываем модальное окно
+};
+
+// Функция для обрезания текста
+const truncateText = (text: string, maxLength: number = 50): string => {
+  if (text.length > maxLength) {
+    return text.slice(0, maxLength) + '...';
+  }
+  return text;
+};
 </script>
 
 <template>
@@ -125,8 +148,11 @@ onMounted(async () => {
         <tbody>
           <tr v-for="appeal in appeals" :key="appeal.id" class="border-b border-gray-700 hover:bg-gray-700">
             <td class="px-6 py-4">{{ appeal.id }}</td>
-            <td class="px-6 py-4 max-w-[300px] break-words whitespace-normal">
-              {{ appeal.appeal_text }}
+            <td
+              class="px-6 py-4 max-w-[300px] break-words whitespace-normal cursor-pointer text-blue-400 hover:text-blue-300 transition-colors duration-200"
+              @click="openModal(appeal.appeal_text)"
+            >
+              {{ truncateText(appeal.appeal_text) }}
             </td>
             <td class="px-6 py-4">{{ appeal.contact_info || '-' }}</td>
             <td class="px-6 py-4">
@@ -156,6 +182,21 @@ onMounted(async () => {
 
     <div v-else class="text-gray-400">
       Нет данных для отображения.
+    </div>
+
+    <!-- Модальное окно -->
+    <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div class="bg-gray-800 text-white p-6 rounded-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-[80vh] overflow-y-auto relative">
+        <!-- Кнопка закрытия в правом верхнем углу -->
+        <button
+          @click="closeModal"
+          class="absolute top-4 right-4 text-red-500 hover:text-red-600 transition-colors duration-200"
+        >
+          &#x2715; <!-- Крестик -->
+        </button>
+        <h2 class="text-xl font-bold mb-4">Полный текст обращения</h2>
+        <p class="text-gray-400 whitespace-pre-wrap">{{ selectedAppealText }}</p>
+      </div>
     </div>
   </div>
 </template>
