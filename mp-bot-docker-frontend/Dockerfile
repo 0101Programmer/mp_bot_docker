@@ -1,5 +1,4 @@
-# Базовый образ с Node.js
-FROM node:18-alpine
+FROM node:23-alpine
 
 # Установка рабочей директории
 WORKDIR /app
