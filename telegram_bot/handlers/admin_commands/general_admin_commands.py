@@ -3,9 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from ...tools.check_admin_requests import check_admin_requests
-
-# Создаем роутер для обработки команд
+# Создаем роутер для обработки админ-команд
 router = Router()
 
 def get_admin_main_menu_keyboard():
@@ -20,18 +18,12 @@ def get_admin_main_menu_keyboard():
 
 # Команда /admin
 @router.message(Command("admin"))
-async def admin_command(message: Message, user=None):
+async def admin_command(message: Message):
     """
-    Команда /admin
-    :param user: Пользователь, полученный из middleware
+    Команда /admin.
+    Доступна только администраторам (проверка выполняется в мидлвейре).
     """
-    if user.is_admin:
-        await message.answer("Выберите категорию:", reply_markup=get_admin_main_menu_keyboard())
-    else:
-        response, reply_markup = await check_admin_requests(user)
-        await message.answer(response, reply_markup=reply_markup)
-
-
+    await message.answer("Выберите категорию:", reply_markup=get_admin_main_menu_keyboard())
 
 # Обработчик для кнопки "Назад"
 @router.callback_query(F.data == "back_to_main_menu")

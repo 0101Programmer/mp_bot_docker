@@ -1,50 +1,49 @@
-from ..models import User, AdminRequest
+from ..models import User, AdminRequest, StatusChoices
 from asgiref.sync import sync_to_async
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 async def check_admin_requests(user: User):
     """
-    Проверяет статус заявок пользователя на административные права.
-    Возвращает кортеж (response_message, reply_markup) или None, если заявок нет.
+    Проверяет статус заявки пользователя и разрешает/запрещает новую подачу.
+    Возвращает (response_message, reply_markup, allow_submit).
     """
-    # Проверяем, есть ли у пользователя активная заявка в ожидании
-    pending_request_exists = await sync_to_async(
-        AdminRequest.objects.filter(user=user, status='pending').exists
+    # Получаем существующую заявку (если есть)
+    existing_request = await sync_to_async(
+        AdminRequest.objects.filter(user=user).first
     )()
-    if pending_request_exists:
-        return (
-            "Ваша заявка на административные права находится на рассмотрении. Пожалуйста, ожидайте.",
-            None
-        )
 
-    # Проверяем, есть ли отклонённая заявка
-    rejected_request_exists = await sync_to_async(
-        AdminRequest.objects.filter(user=user, status='rejected').exists
-    )()
-    if rejected_request_exists:
-        # Получаем последнюю отклонённую заявку
-        rejected_request = await sync_to_async(
-            AdminRequest.objects.filter(user=user, status='rejected').last
-        )()
-
-        # Формируем сообщение с комментарием
-        response = (
-            f"Ваша предыдущая заявка на административные права была отклонена.\n"
-            f"Комментарий: {rejected_request.comment or 'Комментарий отсутствует.'}\n"
-            f"Вы можете подать новую заявку."
-        )
-
-        # Создаем кнопку для подачи новой заявки
+    if not existing_request:
+        # Если заявок нет - разрешаем подачу
         builder = InlineKeyboardBuilder()
         builder.button(text="Подать заявку", callback_data="submit_admin_request")
-        builder.adjust(1)
+        return (
+            "У вас нет статуса администратора. Хотите подать заявку?",
+            builder.as_markup(),
+            True
+        )
 
-        return response, builder.as_markup()
+    # Обрабатываем по статусам
+    if existing_request.status == StatusChoices.APPROVED:
+        return (
+            "Вы уже являетесь администратором.",
+            None,
+            False
+        )
+    elif existing_request.status == StatusChoices.PENDING:
+        return (
+            "Ваша заявка находится на рассмотрении. Пожалуйста, ожидайте решения.",
+            None,
+            False
+        )
+    elif existing_request.status == StatusChoices.REJECTED:
+        # Для отклонённой заявки разрешаем подать новую
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Подать заявку повторно", callback_data="submit_admin_request")
 
-    # Если заявок нет, предлагаем подать новую
-    builder = InlineKeyboardBuilder()
-    builder.button(text="Подать заявку", callback_data="submit_admin_request")
-    builder.adjust(1)
-
-    return "У вас нет статуса администратора. Хотите подать заявку?", builder.as_markup()
+        message = (
+            f"Ваша предыдущая заявка была отклонена.\n"
+            f"Причина: {existing_request.comment or 'не указана'}\n\n"
+            f"Вы можете подать заявку повторно, исправив указанные замечания."
+        )
+        return message, builder.as_markup(), True

@@ -1,3 +1,4 @@
+from typing import Dict, Any
 
 from aiogram import Router, F
 from aiogram.filters import StateFilter
@@ -7,6 +8,7 @@ from aiogram.types import Message, CallbackQuery
 from asgiref.sync import sync_to_async
 
 from ...models import AdminRequest, User
+from ...tools.check_admin_requests import check_admin_requests
 from ...tools.main_logger import logger
 
 # Создаем роутер для обработки команд
@@ -16,18 +18,40 @@ router = Router()
 class AdminRequestState(StatesGroup):
     waiting_for_position = State()  # Состояние для ожидания ввода должности
 
+
 # Обработчик нажатия на кнопку "Подать заявку"
 @router.callback_query(F.data == "submit_admin_request")
-async def submit_admin_request(callback: CallbackQuery, state: FSMContext):
-    # Запрашиваем у пользователя ввод должности
+async def submit_admin_request(
+        callback: CallbackQuery,
+        state: FSMContext,
+        user: User
+):
+    """Обработчик подачи заявки с получением данных из middleware"""
+
+    # Получаем данные из состояния (куда middleware их сохранил)
+    state_data = await state.get_data()
+    request_data = state_data.get('admin_request', {})
+
+    allow_submit = request_data.get('allow_submit', False)
+    response = request_data.get('response', '')
+
+    if not allow_submit:
+        await callback.answer(response, show_alert=True)
+        return
+
+    # Удаляем кнопку
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except:
+        pass
+
     await callback.message.answer(
-        "Пожалуйста, введите вашу должность для административных прав."
+        "Введите вашу должность для получения административных прав.\n"
+        "Пример: «Модератор сообщества» или «Технический администратор»"
     )
 
-    # Устанавливаем состояние для ожидания ввода должности
+    await state.update_data(user_id=user.id)
     await state.set_state(AdminRequestState.waiting_for_position)
-
-    # Подтверждаем выполнение callback
     await callback.answer()
 
 

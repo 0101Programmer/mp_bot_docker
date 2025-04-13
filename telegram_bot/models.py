@@ -219,9 +219,15 @@ class AdminRequest(models.Model):
         verbose_name_plural = _('Запросы администраторам')
         ordering = ['-created_at']
         constraints = [
+            # Проверка допустимых статусов
             models.CheckConstraint(
                 check=models.Q(status__in=[status[0] for status in StatusChoices.ADMIN_REQUEST_STATUSES]),
                 name='valid_admin_request_status'
+            ),
+            # Строгий констрейнт: только одна заявка на пользователя в любом статусе
+            models.UniqueConstraint(
+                fields=['user'],
+                name='one_request_per_user_any_status'
             )
         ]
 
