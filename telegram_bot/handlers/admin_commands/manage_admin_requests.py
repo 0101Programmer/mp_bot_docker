@@ -6,6 +6,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 
 from ...models import AdminRequest
+from ...tools.main_logger import logger
 
 # Создаем роутер для обработки команд
 router = Router()
@@ -134,13 +135,28 @@ async def view_approved_requests(callback: CallbackQuery):
         for request in approved_requests:
             # Асинхронно получаем имя пользователя
             username = await sync_to_async(lambda: request.user.username)()
+
+            # Форматируем даты
+            created_at_formatted = request.created_at.strftime("%d.%m.%Y %H:%M")
+            updated_at_formatted = request.updated_at.strftime("%d.%m.%Y %H:%M")
+
             response = (
                 f"Одобренная заявка:\n"
-                f"ID: {request.id}\n"
+                f"№{request.id}\n"
                 f"Пользователь: {username}\n"
-                f"Должность: {request.admin_position}"
+                f"Должность: {request.admin_position}\n"
+                f"Статус: {request.status}\n"
+                f"Дата создания: {created_at_formatted}\n"
+                f"Дата обновления: {updated_at_formatted}"
             )
-            await callback.message.answer(response)
+
+            # Создаем inline-кнопку "Удалить"
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Удалить", callback_data=f"delete_admin_status:{request.id}")
+            builder.adjust(1)
+
+            # Отправляем сообщение с кнопкой
+            await callback.message.answer(response, reply_markup=builder.as_markup())
     else:
         await callback.message.answer("Нет одобренных заявок.")
 
@@ -158,13 +174,54 @@ async def view_rejected_requests(callback: CallbackQuery):
         for request in rejected_requests:
             # Асинхронно получаем имя пользователя
             username = await sync_to_async(lambda: request.user.username)()
+
+            # Форматируем даты
+            created_at_formatted = request.created_at.strftime("%d.%m.%Y %H:%M")
+            updated_at_formatted = request.updated_at.strftime("%d.%m.%Y %H:%M")
+
             response = (
                 f"Отклонённая заявка:\n"
-                f"ID: {request.id}\n"
+                f"№{request.id}\n"
                 f"Пользователь: {username}\n"
                 f"Должность: {request.admin_position}\n"
-                f"Комментарий: {request.comment}"
+                f"Статус: {request.status}\n"
+                f"Комментарий: {request.comment or 'Не указан'}\n"
+                f"Дата создания: {created_at_formatted}\n"
+                f"Дата обновления: {updated_at_formatted}"
             )
-            await callback.message.answer(response)
+
+            # Создаем inline-кнопку "Удалить"
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Удалить", callback_data=f"delete_admin_status:{request.id}")
+            builder.adjust(1)
+
+            # Отправляем сообщение с кнопкой
+            await callback.message.answer(response, reply_markup=builder.as_markup())
     else:
         await callback.message.answer("Нет отклонённых заявок.")
+
+@router.callback_query(F.data.startswith("delete_admin_status:"))
+async def delete_admin_status(callback: CallbackQuery):
+    # Извлекаем ID заявки из callback_data
+    request_id = int(callback.data.split(":")[1])
+
+    try:
+        # Находим заявку по ID (используем sync_to_async)
+        request = await sync_to_async(AdminRequest.objects.get)(id=request_id)
+
+        # Получаем пользователя асинхронно
+        user = await sync_to_async(lambda: request.user)()
+
+        # Удаляем заявку через sync_to_async
+        await sync_to_async(request.delete)()
+
+        # Отправляем сообщение об успешном удалении
+        await callback.message.answer(f"Статус администратора для пользователя {user.username} успешно удален.")
+    except AdminRequest.DoesNotExist:
+        await callback.message.answer("Заявка не найдена.")
+    except Exception as e:
+        logger.error(f"Ошибка при удалении статуса администратора: {e}")
+        await callback.message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
+    # Подтверждаем обработку callback-запроса
+    await callback.answer()
