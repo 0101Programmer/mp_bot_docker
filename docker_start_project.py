@@ -55,11 +55,11 @@ if __name__ == "__main__":
     try:
         # Если указан флаг -d, сначала останавливаем и удаляем контейнеры
         if args.down:
-            run_command("docker compose down", "Остановка контейнеров через docker compose down")
+            run_command("docker compose down --rmi all", "Остановка контейнеров через docker compose down")
 
         # Если указан флаг -d или образы не найдены
         if args.down or not check_images_exist():
-            run_command("docker buildx bake", "Сборка образов через docker buildx bake")
+            run_command("docker buildx bake --no-cache --pull", "Сборка образов через docker buildx bake")
 
         # Запуск контейнеров
         run_command("docker compose up", "Запуск контейнеров через docker compose up")
