@@ -1,33 +1,23 @@
 services:
   web:
     image: mp_bot_docker-web
-    container_name: django_web
+    container_name: django_web  # Фиксированное имя
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Хост:Контейнер
     env_file:
-      - .env
+      - .env  # Секреты
     volumes:
       - .:/app
-
-  bot:
-    image: mp_bot_docker-bot
-    container_name: telegram_bot
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-    command: ["python", "manage.py", "runbot"]
 
   frontend:
     image: mp_bot_docker-frontend
     container_name: vue_frontend_dev
     ports:
-      - "5173:5173"
+      - "5173:5173"  # Vite HMR порт
     env_file:
-      - .env
+      - .env  # Общие переменные с backend
     depends_on:
-      - web
+      - web  # Ждёт запуска web-сервиса (но не проверяет его готовность)
     restart: always
 
   redis:

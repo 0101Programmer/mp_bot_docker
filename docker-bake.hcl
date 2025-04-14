@@ -1,21 +1,18 @@
+// 1. Группа сборки по умолчанию (запускается при `docker buildx bake`)
 group "default" {
-    targets = ["web", "bot", "frontend"]
+    targets = ["web", "frontend"]  // Порядок важен - собирается последовательно
 }
 
+// 2. Настройки для backend-образа
 target "web" {
-    context = "."
-    dockerfile = "./Dockerfile"
-    tags = ["mp_bot_docker-web"]
+    context = "."  // Сборка из текущей директории
+    dockerfile = "./Dockerfile"  // Путь относительно context
+    tags = ["mp_bot_docker-web:latest"]
 }
 
-target "bot" {
-    context = "."
-    dockerfile = "./Dockerfile"
-    tags = ["mp_bot_docker-bot"]
-}
-
+// 3. Настройки для frontend-образа
 target "frontend" {
-    context = "./mp-bot-docker-frontend"
+    context = "./mp-bot-docker-frontend"  // Отдельная папка с фронтом
     dockerfile = "./Dockerfile"
-    tags = ["mp_bot_docker-frontend"]
+    tags = ["mp_bot_docker-frontend:latest"]
 }
