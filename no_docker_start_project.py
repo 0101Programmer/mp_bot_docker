@@ -31,17 +31,28 @@ async def main():
     try:
         print("Запуск всех компонентов...")
 
-        # Запускаем Django сервер
+        # 1. Запускаем Django сервер
+        print("Запуск Django сервера...")
         django_server = run_command(["python", "manage.py", "runserver"])
         print("Django сервер запущен.")
 
-        # Запускаем фронтенд
+        # 2. Проверяем Redis после запуска Django
+        print("Проверка доступности Redis...")
+        try:
+            subprocess.run(["python", "manage.py", "checkredis"], check=True)
+        except subprocess.CalledProcessError:
+            print("Redis недоступен. Завершение работы.")
+            sys.exit(1)
+
+        # 3. Запускаем фронтенд
+        print("Запуск фронтенда...")
         frontend_server = run_command(
             ["cmd", "/c", "cd", "mp-bot-docker-frontend", "&&", "npm", "run", "dev"]
         )
         print("Фронтенд запущен.")
 
-        # Запускаем бота
+        # 4. Запускаем бота
+        print("Запуск Telegram бота...")
         bot_process = run_command(["python", "manage.py", "runbot"])
         print("Telegram бот запущен.")
 
