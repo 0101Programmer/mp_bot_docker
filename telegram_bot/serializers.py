@@ -2,7 +2,12 @@ import re
 
 from rest_framework import serializers
 from .models import User, Appeal, CommissionInfo, AdminRequest
+from decouple import config
 
+# Загрузка конфигурации из .env
+MIN_TXT_LENGTH = int(config('MIN_TXT_LENGTH'))  # Минимальная длина текста
+MAX_TXT_LENGTH = int(config('MAX_TXT_LENGTH'))  # Максимальная длина текста
+MAX_FILE_SIZE = int(config('MAX_FILE_SIZE'))  # Максимальный размер файла в байтах
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -54,8 +59,14 @@ class AppealSerializer(serializers.ModelSerializer):
         """
         Валидация текста обращения.
         """
-        if len(value) < 100:
-            raise serializers.ValidationError("Текст обращения должен содержать минимум 100 символов.")
+        if len(value) < MIN_TXT_LENGTH:
+            raise serializers.ValidationError(
+                f"Текст обращения должен содержать минимум {MIN_TXT_LENGTH} символов."
+            )
+        if len(value) > MAX_TXT_LENGTH:
+            raise serializers.ValidationError(
+                f"Текст обращения не должен превышать {MAX_TXT_LENGTH} символов."
+            )
         return value
 
     def validate_contact_info(self, value):
@@ -80,6 +91,15 @@ class AppealSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Комиссия не указана.")
         return value
 
+    def validate_file_path(self, value):
+        """
+        Валидация размера файла.
+        """
+        if value and value.size > MAX_FILE_SIZE:
+            raise serializers.ValidationError(
+                f"Размер файла не должен превышать {MAX_FILE_SIZE / (1024 * 1024)} MB."
+            )
+        return value
 
 class AppealSerializerForAdmin(serializers.ModelSerializer):
     """

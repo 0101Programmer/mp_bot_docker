@@ -28,7 +28,7 @@
           v-model="appealText"
           rows="5"
           class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Введите текст обращения (минимум 100 символов)"
+          :placeholder="`Введите текст обращения (минимум ${configStore.minTxtLength} символов)`"
           required
         ></textarea>
       </div>
@@ -71,6 +71,7 @@
           @change="handleFileUpload"
           class="mt-1 block w-full text-white text-sm cursor-pointer bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <small class="text-gray-400">Максимальный размер файла: {{ configStore.maxFileSizeMb }} MB</small>
       </div>
 
       <!-- Кнопка отправки -->
