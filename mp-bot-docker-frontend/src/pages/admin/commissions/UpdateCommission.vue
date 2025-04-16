@@ -16,14 +16,23 @@
       @submit.prevent="updateCommission"
       class="w-full max-w-2xl bg-gray-800 shadow-lg rounded-lg overflow-hidden p-6"
     >
-      <!-- Информация о датах -->
-      <div class="grid grid-cols-2 gap-4 mb-6 text-sm text-gray-400">
-        <div class="flex flex-col">
-          <span class="font-medium">Дата создания:</span>
+      <!-- Информация о датах и ID -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-sm text-gray-400">
+        <!-- Дата создания -->
+        <div class="flex flex-col p-2 bg-gray-700 rounded-md">
+          <span class="font-medium text-gray-300">Дата создания:</span>
           <span class="text-white">{{ formatDateTime(created_at) }}</span>
         </div>
-        <div class="flex flex-col">
-          <span class="font-medium">Последнее обновление:</span>
+
+        <!-- ID комиссии -->
+        <div class="flex flex-col items-center justify-center p-2 bg-gray-700 rounded-md">
+          <span class="font-medium text-gray-300">ID комиссии:</span>
+          <span class="text-white font-mono">{{ commission_id }}</span>
+        </div>
+
+        <!-- Последнее обновление -->
+        <div class="flex flex-col p-2 bg-gray-700 rounded-md">
+          <span class="font-medium text-gray-300">Последнее обновление:</span>
           <span class="text-white">{{ formatDateTime(updated_at) }}</span>
         </div>
       </div>
@@ -97,6 +106,7 @@ const name = ref('');
 const description = ref('');
 const created_at = ref(''); // Добавлено: дата создания
 const updated_at = ref(''); // Добавлено: дата обновления
+const commission_id = ref<string | null>(null); // Новое состояние для ID комиссии
 const errorMessage = ref<string>('');
 const isLoading = ref(false);
 const isCommissionFound = ref(true);
@@ -130,6 +140,7 @@ onMounted(async () => {
       description.value = data.description;
       created_at.value = data.created_at; // Получаем дату создания
       updated_at.value = data.updated_at; // Получаем дату обновления
+      commission_id.value = data.id; // Заполняем ID комиссии
     } else {
       console.error('Ошибка при загрузке данных комиссии');
       isCommissionFound.value = false;
