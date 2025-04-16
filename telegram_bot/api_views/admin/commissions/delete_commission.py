@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound, ParseError
@@ -18,7 +19,7 @@ class DeleteCommissionView(APIView):
             raise ParseError("Invalid request body.")
 
         # Проверяем, является ли пользователь администратором
-        if not is_user_admin(user_id):
+        if not async_to_sync(is_user_admin)(user_id):
             raise PermissionDenied("Только администраторы могут удалять комиссии.")
 
         # Ищем комиссию по ID

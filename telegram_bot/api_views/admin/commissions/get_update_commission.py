@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
@@ -31,7 +32,7 @@ class UpdateCommissionView(APIView):
             raise ParseError("Invalid request body.")
 
         # Проверяем, является ли пользователь администратором
-        if not is_user_admin(user_id):
+        if not async_to_sync(is_user_admin)(user_id):
             raise PermissionDenied("Только администраторы могут редактировать комиссии.")
 
         # Ищем комиссию по ID

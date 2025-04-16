@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,7 +26,7 @@ class UpdateAppealStatusView(APIView):
             raise ValidationError("user_id is required in the request body.")
 
         # Проверяем, является ли пользователь администратором
-        if not is_user_admin(user_id):
+        if not async_to_sync(is_user_admin)(user_id):
             raise PermissionDenied("Только администраторы могут изменять статус обращения.")
 
         try:

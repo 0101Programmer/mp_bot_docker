@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,7 +14,7 @@ class CreateCommissionView(APIView):
         user_id = request.data.get('user_id')
 
         # Проверяем, является ли пользователь администратором
-        if not is_user_admin(user_id):
+        if not async_to_sync(is_user_admin)(user_id):
             raise PermissionDenied("Только администраторы могут создавать комиссии.")
 
         # Используем сериализатор для создания

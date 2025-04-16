@@ -1,7 +1,8 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from asgiref.sync import async_to_sync
 from rest_framework.exceptions import PermissionDenied, NotFound, ParseError
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from ....models import User
 from ....tools.check_admin_status import is_user_admin
 
@@ -18,7 +19,7 @@ class DeleteUserView(APIView):
             raise ParseError("Invalid request body.")
 
         # Проверяем, является ли пользователь администратором
-        if not is_user_admin(admin_id):
+        if not async_to_sync(is_user_admin)(user_id):
             raise PermissionDenied("Только администраторы могут удалять пользователей.")
 
         # Проверяем, что администратор не пытается удалить самого себя
