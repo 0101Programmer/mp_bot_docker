@@ -13,9 +13,14 @@
     </div>
 
     <!-- Блок для отображения ошибок -->
-    <div v-if="Object.keys(errors).length > 0" class="w-full max-w-2xl bg-red-800 text-white rounded-lg p-4 mb-4">
+    <div v-if="flatErrors.length > 0" class="transition-all duration-300 ease-in-out w-full max-w-2xl bg-red-600 text-white rounded-lg shadow-md p-4 mb-4">
       <h2 class="text-lg font-bold mb-2">Ошибки валидации:</h2>
-      <pre class="text-sm whitespace-pre-wrap break-words">{{ JSON.stringify(errors, null, 2) }}</pre>
+      <ul class="space-y-1 text-sm">
+        <li v-for="(message, index) in flatErrors" :key="index" class="flex items-start">
+          <span class="mr-2 text-red-300">•</span>
+          <span class="text-left">{{ message }}</span>
+        </li>
+      </ul>
     </div>
 
     <!-- Форма для создания обращения -->
@@ -104,6 +109,10 @@ const file = ref<File | null>(null);
 const selectedCommission = ref<string | null>(null);
 const commissions = ref<{ id: string; name: string; description: string }[]>([]);
 const errors = ref<any>({});
+// Вычисляемое свойство для плоского списка ошибок
+const flatErrors = computed(() => {
+  return Object.values(errors.value).flat();
+});
 const isLoading = ref(false);
 
 // Флаг "нет комиссий"
