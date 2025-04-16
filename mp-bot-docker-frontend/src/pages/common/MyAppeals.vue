@@ -131,6 +131,16 @@ const formatDate = (dateString: string): string => {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 };
+
+// Метод для копирования текста
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Текст скопирован в буфер обмена!');
+  }).catch((error) => {
+    console.error('Ошибка при копировании текста:', error);
+    alert('Не удалось скопировать текст.');
+  });
+};
 </script>
 
 <template>
@@ -219,7 +229,14 @@ const formatDate = (dateString: string): string => {
           &#x2715; <!-- Крестик -->
         </button>
         <h2 class="text-xl font-bold mb-4">Полный текст обращения</h2>
-        <p class="text-gray-400 whitespace-pre-wrap">{{ selectedAppealText }}</p>
+        <p class="text-gray-300 whitespace-pre-wrap break-words leading-relaxed">{{ selectedAppealText }}</p>
+        <!-- Кнопка "Скопировать" -->
+        <button
+          @click="copyToClipboard(selectedAppealText)"
+          class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200"
+        >
+          Скопировать текст
+        </button>
       </div>
     </div>
   </div>
