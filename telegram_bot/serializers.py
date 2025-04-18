@@ -1,4 +1,5 @@
 import re
+from django.db.utils import IntegrityError
 
 from rest_framework import serializers
 from .models import User, Appeal, CommissionInfo, AdminRequest
@@ -132,14 +133,77 @@ class CommissionInfoSerializer(serializers.ModelSerializer):
 class CommissionInfoWriteSerializer(serializers.ModelSerializer):
     """
     Сериализатор для создания/обновления комиссий.
+    Проверяет уникальность имени без учета регистра.
     """
-    name = serializers.CharField(required=True, allow_blank=False)
-    description = serializers.CharField(required=True, allow_blank=False)
+    name = serializers.CharField(required=True, allow_blank=False, error_messages={
+        'blank': 'Название не может быть пустым',
+        'required': 'Название обязательно для заполнения'
+    })
+    description = serializers.CharField(required=True, allow_blank=False, error_messages={
+        'blank': 'Описание не может быть пустым',
+        'required': 'Описание обязательно для заполнения'
+    })
 
     class Meta:
         model = CommissionInfo
         fields = ['id', 'name', 'description']
         read_only_fields = ['id']
+
+    def validate_name(self, value):
+        """
+        Проверяет, что имя комиссии уникально (без учета регистра).
+        """
+        if not value:
+            raise serializers.ValidationError("Название не может быть пустым")
+
+        name_lower = value.lower()
+        queryset = CommissionInfo.objects.filter(name__iexact=name_lower)
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            existing_name = queryset.first().name
+            raise serializers.ValidationError(
+                f"Название '{value}' уже используется (регистр не учитывается). "
+                f"Существующее название: '{existing_name}'"
+            )
+        return value
+
+    def validate(self, data):
+        """
+        Общая валидация для всех полей.
+        """
+        errors = {}
+
+        # Проверка названия
+        if 'name' in data and not data['name'].strip():
+            errors['name'] = ['Название не может состоять только из пробелов']
+
+        # Проверка описания
+        if 'description' in data and not data['description'].strip():
+            errors['description'] = ['Описание не может состоять только из пробелов']
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return data
+
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError as e:
+            raise serializers.ValidationError({
+                'name': ['Комиссия с таким названием уже существует']
+            })
+
+    def update(self, instance, validated_data):
+        try:
+            return super().update(instance, validated_data)
+        except IntegrityError as e:
+            raise serializers.ValidationError({
+                'name': ['Комиссия с таким названием уже существует']
+            })
 
 
 class AdminRequestSerializer(serializers.ModelSerializer):

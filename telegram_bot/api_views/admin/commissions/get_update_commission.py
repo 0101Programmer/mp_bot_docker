@@ -1,8 +1,10 @@
 from asgiref.sync import async_to_sync
+from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.utils import IntegrityError
 
 from ....models import CommissionInfo
 from ....serializers import CommissionInfoSerializer, CommissionInfoWriteSerializer
@@ -20,31 +22,75 @@ class CommissionDetailView(APIView):
         serializer = CommissionInfoSerializer(commission)
         return Response(serializer.data)
 
-class UpdateCommissionView(APIView):
 
+class UpdateCommissionView(APIView):
     def put(self, request, commission_id):
-        # Получаем user_id из тела запроса
         try:
             user_id = request.data.get('user_id')
             if not user_id:
-                raise ParseError("user_id is required in the request body.")
+                return Response(
+                    {
+                        "status": "error",
+                        "message": "Требуется user_id",
+                        "details": {"user_id": ["Это поле обязательно"]}
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         except AttributeError:
-            raise ParseError("Invalid request body.")
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Неверный формат запроса"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Проверяем, является ли пользователь администратором
         if not async_to_sync(is_user_admin)(user_id):
-            raise PermissionDenied("Только администраторы могут редактировать комиссии.")
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Только администраторы могут редактировать комиссии"
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # Ищем комиссию по ID
         try:
             commission = CommissionInfo.objects.get(id=commission_id)
         except CommissionInfo.DoesNotExist:
-            raise NotFound("Комиссия с указанным ID не найдена.")
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Комиссия не найдена"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Обновляем данные комиссии
         serializer = CommissionInfoWriteSerializer(commission, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=200)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Ошибка валидации",
+                    "details": serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        return Response(serializer.errors, status=400)
+        try:
+            serializer.save()
+            return Response(
+                {
+                    "status": "success",
+                    "data": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        except IntegrityError:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Комиссия с таким названием уже существует"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )

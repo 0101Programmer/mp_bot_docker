@@ -4,11 +4,13 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
+from django.db.utils import IntegrityError
 
 from ...models import CommissionInfo
 
 # Создаем роутер для обработки команд
 router = Router()
+
 
 # Определяем состояния для добавления комиссии
 class AddCommissionState(StatesGroup):
@@ -19,58 +21,74 @@ class AddCommissionState(StatesGroup):
 # Обработчик для выбора "Действия с комиссиями"
 @router.callback_query(F.data == "commission_actions")
 async def commission_actions_menu(callback: CallbackQuery):
-    # Создаем меню для работы с комиссиями
     builder = InlineKeyboardBuilder()
     builder.button(text="Добавить комиссию", callback_data="add_commission")
     builder.button(text="Удалить комиссию", callback_data="delete_commissions")
-    builder.button(text="Назад", callback_data="back_to_main_menu")  # Кнопка "Назад"
+    builder.button(text="Назад", callback_data="back_to_main_menu")
     builder.adjust(1)
 
-    # Редактируем сообщение, чтобы показать новое меню
     await callback.message.edit_text("Выберите действие с комиссиями:", reply_markup=builder.as_markup())
+
 
 # Обработчик для начала добавления комиссии
 @router.callback_query(F.data == "add_commission")
 async def start_add_commission(callback: CallbackQuery, state: FSMContext):
-    # Подтверждаем обработку callback-запроса
     await callback.answer()
-
-    # Переходим в состояние ожидания ввода названия
     await state.set_state(AddCommissionState.waiting_for_name)
-
-    # Запрашиваем название комиссии
     await callback.message.answer("Введите название комиссии:")
 
 
 # Обработчик для ввода названия комиссии
 @router.message(AddCommissionState.waiting_for_name)
 async def process_commission_name(message: Message, state: FSMContext):
-    # Сохраняем название комиссии в состоянии
-    await state.update_data(name=message.text)
+    commission_name = message.text.strip()
 
-    # Переходим в состояние ожидания ввода описания
+    # Проверяем существование комиссии с таким названием
+    commission_exists = await sync_to_async(CommissionInfo.objects.filter(name=commission_name).exists)()
+
+    if commission_exists:
+        await message.answer(
+            f"❌ Комиссия с названием <b>'{commission_name}'</b> уже существует.\n"
+            "Пожалуйста, введите другое название:",
+            parse_mode="HTML"
+        )
+        return
+
+    await state.update_data(name=commission_name)
     await state.set_state(AddCommissionState.waiting_for_description)
-
-    # Запрашиваем описание комиссии
-    await message.answer("Введите описание комиссии:")
+    await message.answer("📝 Введите описание комиссии:")
 
 
-# Обработчик для ввода описания комиссии
+# Обработчик для ввода описания комиссии и сохранения
 @router.message(AddCommissionState.waiting_for_description)
 async def process_commission_description(message: Message, state: FSMContext):
-    # Получаем данные из состояния
     data = await state.get_data()
-    name = data["name"]
-    description = message.text
+    commission_name = data.get('name')
+    commission_description = message.text.strip()
 
-    # Создаем новую комиссию в базе данных
-    await sync_to_async(CommissionInfo.objects.create)(name=name, description=description)
+    try:
+        # Создаем новую комиссию
+        await sync_to_async(CommissionInfo.objects.create)(
+            name=commission_name,
+            description=commission_description
+        )
 
-    # Сбрасываем состояние
-    await state.clear()
+        await message.answer(
+            f"✅ Комиссия <b>'{commission_name}'</b> успешно создана!\n\n"
+            f"<b>Название:</b> {commission_name}\n"
+            f"<b>Описание:</b> {commission_description}",
+            parse_mode="HTML"
+        )
 
-    # Отправляем сообщение об успешном добавлении
-    await message.answer(f"Комиссия '{name}' успешно добавлена!")
+    except IntegrityError:
+        await message.answer(
+            f"❌ Ошибка: комиссия с названием '{commission_name}' уже существует. "
+            "Пожалуйста, начните процесс заново с другого названия."
+        )
+    except Exception as e:
+        await message.answer(f"⚠️ Произошла непредвиденная ошибка: {str(e)}")
+    finally:
+        await state.clear()
 
 
 # Обработчик для удаления комиссии
