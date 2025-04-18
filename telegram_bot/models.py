@@ -147,40 +147,6 @@ class Appeal(models.Model):
         return f"Обращение #{self.id} ({self.get_status_display()})"
 
 
-class Notification(models.Model):
-    """
-    Модель уведомлений.
-    """
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='notifications',
-        verbose_name=_('Пользователь')
-    )
-    appeal = models.ForeignKey(
-        Appeal,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='notifications',
-        verbose_name=_('Обращение')
-    )
-    message = models.TextField(
-        verbose_name=_('Сообщение'),
-        help_text=_('Текст уведомления, который будет отправлен пользователю.')
-    )
-    sent = models.BooleanField(default=False, verbose_name=_('Отправлено'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Дата создания'))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Дата обновления'))
-
-    class Meta:
-        verbose_name = _('Уведомление')
-        verbose_name_plural = _('Уведомления')
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Уведомление #{self.id}: {self.message[:50]}..."
-
 
 class AdminRequest(models.Model):
     """
@@ -233,3 +199,63 @@ class AdminRequest(models.Model):
 
     def __str__(self):
         return f"Запрос #{self.id} от {self.user} ({self.get_status_display()})"
+
+
+class Notification(models.Model):
+    """
+    Модель уведомлений.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name=_('Пользователь')
+    )
+    appeal = models.ForeignKey(
+        Appeal,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications',
+        verbose_name=_('Обращение')
+    )
+    admin_request = models.ForeignKey(
+        AdminRequest,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications',
+        verbose_name=_('Запрос администратору')
+    )
+    message = models.TextField(
+        verbose_name=_('Сообщение'),
+        help_text=_('Текст уведомления, который будет отправлен пользователю.')
+    )
+    sent = models.BooleanField(default=False, verbose_name=_('Отправлено'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Дата создания'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Дата обновления'))
+
+    class Meta:
+        verbose_name = _('Уведомление')
+        verbose_name_plural = _('Уведомления')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Уведомление #{self.id}: {self.message[:50]}..."
+
+    def clean(self):
+        """
+        Валидация: хотя бы одно из полей appeal или admin_request должно быть заполнено.
+        """
+        if not self.appeal and not self.admin_request:
+            raise ValidationError(
+                {'appeal': _('Необходимо указать либо обращение, либо запрос на администрирование.')},
+                code='required'
+            )
+
+    def save(self, *args, **kwargs):
+        """
+        Переопределение метода save для вызова clean перед сохранением.
+        """
+        self.clean()
+        super().save(*args, **kwargs)
