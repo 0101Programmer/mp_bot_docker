@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
+from .utils import generate_commissions_keyboard
 
 from ...models import CommissionInfo
 from ...tools.main_logger import logger
@@ -22,18 +23,14 @@ async def show_commissions(message: Message):
             await message.answer("Список комиссий пуст.")
             return
 
-        # Создаем inline-клавиатуру с кнопками для каждой комиссии
-        keyboard = [
-            [InlineKeyboardButton(text=commission.name, callback_data=f"info_commission:{commission.id}")]
-            for commission in commissions
-        ]
-
-        # Создаем объект inline-клавиатуры
-        markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+        # Генерируем клавиатуру с помощью функции
+        markup = generate_commissions_keyboard(commissions)
 
         # Отправляем сообщение с inline-клавиатурой
         await message.answer(
-            "Выберите комиссию для получения информации:", reply_markup=markup
+            "<b>Выберите комиссию для получения информации:</b>",
+            reply_markup=markup,
+            parse_mode='HTML'
         )
 
     except Exception as e:
@@ -54,27 +51,34 @@ async def show_commission_info(callback_query: CallbackQuery):
         # Находим комиссию в базе данных
         commission = await sync_to_async(CommissionInfo.objects.get)(id=commission_id)
 
-        # Формируем ответное сообщение
+        # Формируем ответное сообщение с HTML-стилизацией, эмодзи и увеличенными межстрочными интервалами
         response = (
-            f"Комиссия: {commission.name}\n\n"
-            f"Описание: {commission.description or 'Описание отсутствует.'}"
+            f"📋 <b>Комиссия:</b> {commission.name}\n\n"  # Добавляем пустую строку после названия
+            f"🔢 <b>ID комиссии:</b> <code>{commission.id}</code>\n\n"  # Добавляем пустую строку после ID
+            f"📅 <b>Дата создания:</b> <i>{commission.created_at.strftime('%d.%m.%Y %H:%M')}</i>\n\n"  # Добавляем пустую строку после даты
+            f"📝 <b>Описание:</b>\n{commission.description or '<i>Описание отсутствует.</i>'}"  # Описание без дополнительных строк
         )
 
-        # Создаем inline-клавиатуру с кнопкой "Назад"
+        # Создаем inline-клавиатуру с кнопкой "Назад" (добавляем эмодзи 🔙)
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Назад", callback_data="back_to_commissions")]
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_commissions")]
             ]
         )
 
         # Редактируем сообщение с описанием комиссии и кнопкой "Назад"
-        await callback_query.message.edit_text(response, reply_markup=markup)
+        await callback_query.message.edit_text(
+            text=response,
+            reply_markup=markup,
+            parse_mode='HTML'  # Передаем parse_mode как строку
+        )
 
     except CommissionInfo.DoesNotExist:
         await callback_query.message.edit_text("Комиссия не найдена. Попробуйте снова.")
     except Exception as e:
         logger.error(f"Ошибка при получении информации о комиссии: {e}")
         await callback_query.message.edit_text("Произошла ошибка. Пожалуйста, попробуйте позже.")
+
 
 # Обработчик inline-кнопки "Назад"
 @router.callback_query(F.data == "back_to_commissions")
@@ -91,18 +95,14 @@ async def go_back_to_commissions(callback_query: CallbackQuery):
             await callback_query.message.edit_text("Список комиссий пуст.")
             return
 
-        # Создаем inline-клавиатуру с кнопками для каждой комиссии
-        keyboard = [
-            [InlineKeyboardButton(text=commission.name, callback_data=f"info_commission:{commission.id}")]
-            for commission in commissions
-        ]
-
-        # Создаем объект inline-клавиатуры
-        markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+        # Генерируем клавиатуру с помощью функции
+        markup = generate_commissions_keyboard(commissions)
 
         # Редактируем сообщение для возврата к списку комиссий
         await callback_query.message.edit_text(
-            "Выберите комиссию для получения информации:", reply_markup=markup
+            "<b>Выберите комиссию для получения информации:</b>",
+            reply_markup=markup,
+            parse_mode='HTML'
         )
 
     except Exception as e:
