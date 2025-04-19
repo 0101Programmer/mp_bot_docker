@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-start p-4">
+
     <!-- Модальное окно для полного текста -->
     <div v-if="selectedAppeal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div class="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
@@ -12,7 +13,7 @@
               </svg>
             </button>
           </div>
-          <div class="whitespace-pre-line bg-gray-700 p-4 rounded-md mb-4">
+          <div class="whitespace-pre-line break-words overflow-wrap-break-word bg-gray-700 p-4 rounded-md mb-4">
             {{ selectedAppeal.appeal_text }}
           </div>
           <div class="text-sm text-gray-400">
