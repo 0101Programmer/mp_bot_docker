@@ -1,4 +1,3 @@
-
 from aiogram import Router
 from aiogram.filters.command import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -20,19 +19,21 @@ async def cmd_account(message: Message, user=None):
         # Генерируем персональную ссылку
         personal_link = generate_personal_link(user.telegram_id)
 
-        # Создаём кнопку
+        # Создаём кнопку с эмодзи
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="Перейти в личный кабинет", url=personal_link)
+                    InlineKeyboardButton(text="🌟 Открыть личный кабинет ✨", url=personal_link)
                 ]
             ]
         )
 
-        # Отправляем сообщение с кнопкой
+        # Отправляем сообщение с кнопкой и стилизованным текстом
         await message.answer(
-            "Нажмите на кнопку ниже, чтобы перейти в личный кабинет:",
-            reply_markup=keyboard
+            "✨ <b>Добро пожаловать!</b> ✨\n\n"
+            "Нажмите на кнопку ниже, чтобы перейти в ваш <b>личный кабинет</b>:",
+            reply_markup=keyboard,
+            parse_mode='HTML'
         )
 
     except Exception as e:
