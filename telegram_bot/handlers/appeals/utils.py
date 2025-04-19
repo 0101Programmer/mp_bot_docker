@@ -1,12 +1,16 @@
 from html import escape
 from typing import Callable, Awaitable
 
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
+from decouple import config
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 
 from ...models import Appeal, StatusChoices
+from ...models import CommissionInfo, User
 from ...tools.main_logger import logger
 
 # ===================== КОНСТАНТЫ ФОРМАТИРОВАНИЯ =====================
@@ -140,3 +144,59 @@ async def process_appeal(
     except Exception as e:
         logger.error(f"Error in process_appeal: {e}", exc_info=True)
         await callback.answer(error_message, show_alert=True)
+
+# ===================== КОНФИГ ДЛЯ НАПИСАНИЯ ОБРАЩЕНИЙ =====================
+
+# Паттерны для проверки email и номера телефона
+EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+PHONE_PATTERN = r'^\+7\d{10}$'  # Российский номер в международном формате: +7XXXXXXXXXX
+
+# Длинна текста
+MIN_TXT_LENGTH = int(config('MIN_TXT_LENGTH'))
+MAX_TXT_LENGTH = int(config('MAX_TXT_LENGTH'))
+
+# Максимальный размер файла (в байтах)
+MAX_FILE_SIZE = int(config('MAX_FILE_SIZE'))
+
+# Функция для сохранения обращения в базу данных
+@sync_to_async
+def save_appeal_to_db(data, telegram_id, django_file=None, original_file_name=None):
+    """
+    Сохраняет обращение в базу данных.
+    """
+    try:
+        # Получаем пользователя по telegram_id
+        user = User.objects.get(telegram_id=telegram_id)
+    except ObjectDoesNotExist:
+        raise ValueError("Пользователь с указанным telegram_id не найден.")
+
+    try:
+        # Получаем комиссию по ID
+        commission = CommissionInfo.objects.get(id=data["commission_id"])
+    except ObjectDoesNotExist:
+        raise ValueError("Комиссия с указанным ID не найдена.")
+
+    # Создаем объект обращения
+    appeal = Appeal(
+        user=user,
+        commission=commission,
+        appeal_text=data["appeal_text"],
+        contact_info=data.get("contact_info"),
+        status=StatusChoices.NEW
+    )
+
+    # Если файл передан, сохраняем его
+    if django_file and original_file_name:
+        appeal.file_path.save(original_file_name, django_file)
+
+    # Сохраняем обращение в базу данных
+    appeal.save()
+    return appeal
+
+# Класс для хранения состояний
+class AppealForm(StatesGroup):
+    choosing_commission = State()  # Выбор комиссии
+    choosing_contact_option = State()  # Выбор контактов или анонимности
+    entering_contact_info = State()  # Ввод контактной информации
+    writing_appeal = State()  # Написание обращения
+    attaching_file = State()  # Прикрепление файла
