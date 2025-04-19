@@ -10,8 +10,27 @@ from ...tools.main_logger import logger
 
 router = Router()
 
-# Константы
+# ===================== КОНСТАНТЫ ФОРМАТИРОВАНИЯ =====================
 PREVIEW_LENGTH = 300  # Количество символов для предпросмотра текста обращения
+DATE_FORMAT = "%d.%m.%Y %H:%M"  # Формат отображения дат
+
+# Разделительная линия для сообщений
+SEPARATOR = "<i>────────────────</i>"
+
+# Шаблоны строк для недлинного текста
+APPEAL_HEADER = "<b>📌 Обращение №{id}</b>\n{separator}\n"
+STATUS_LINE = "{emoji} <b>Статус:</b> {status}\n\n"
+COMMISSION_LINE = "👥 <b>Комиссия:</b> {commission}\n\n"
+TEXT_HEADER = "📝 <b>Текст обращения:</b>\n<code>{text}</code>\n\n"
+CONTACTS_LINE = "📞 <b>Контакты:</b> {contacts}\n\n"
+DATES_LINE = "📅 <b>Создано:</b> {created_at}\n🔄 <b>Обновлено:</b> {updated_at}"
+
+# Шаблоны строк для длинного текста
+FULL_APPEAL_HEADER = "<b>📌 Обращение №{id}</b>\n{separator}\n"
+FULL_STATUS_LINE = "{emoji} <b>Статус:</b> {status}\n\n"
+FULL_COMMISSION_LINE = "👥 <b>Комиссия:</b> {commission}\n\n"
+FULL_TEXT_HEADER = "📝 <b>Полный текст обращения:</b>\n<code>{text}</code>\n\n"
+FILE_ATTACHMENT_LINE = "\n📎 <i>Прикреплён документ</i>"
 
 # Словарь для соответствия статусов обращений и их отображения
 APPEAL_STATUS_MAPPING = {
@@ -29,58 +48,7 @@ APPEAL_STATUS_MAPPING = {
     }
 }
 
-
-# async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardBuilder]:
-#     """
-#     Генерирует текст ответа и клавиатуру для обращения.
-#     Возвращает кортеж (текст, клавиатура)
-#     """
-#     # Получаем данные статуса
-#     status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
-#         'display': appeal.status,
-#         'emoji': '📄'
-#     })
-#
-#     # Получаем название комиссии
-#     commission_name = appeal.commission.name if appeal.commission else _("Не указана")
-#
-#     # Определяем, нужно ли обрезать текст
-#     needs_expansion = len(appeal.appeal_text) > PREVIEW_LENGTH
-#     display_text = appeal.appeal_text[:PREVIEW_LENGTH] + "..." if needs_expansion else appeal.appeal_text
-#
-#     # Форматируем даты
-#     created_at_formatted = appeal.created_at.strftime("%d.%m.%Y %H:%M")
-#     updated_at_formatted = appeal.updated_at.strftime("%d.%m.%Y %H:%M")
-#
-#     # Формируем текст
-#     response = (
-#         f"📌 {_('Обращение')} №{appeal.id}\n"
-#         f"{status_data['emoji']} {_('Статус')}: {status_data['display']}\n"
-#         f"👥 {_('Комиссия')}: {commission_name}\n"
-#         f"📝 {_('Текст')}: {display_text}\n"
-#         f"📞 {_('Контактная информация')}: {appeal.contact_info or _('Не указана')}\n"
-#         f"📅 {_('Дата создания')}: {created_at_formatted}\n"
-#         f"🔄 {_('Последнее обновление')}: {updated_at_formatted}"
-#     )
-#
-#     # Создаем клавиатуру
-#     builder = InlineKeyboardBuilder()
-#
-#     # Добавляем кнопку "Показать полностью" только если текст обрезан
-#     if needs_expansion:
-#         builder.button(text=f"📄 {_('Показать полностью')}", callback_data=f"show_full:{appeal.id}")
-#
-#     # Кнопка "Удалить"
-#     builder.button(text=f"🗑 {_('Удалить')}", callback_data=f"delete_appeal:{appeal.id}")
-#
-#     # Кнопка "Открыть файл", если файл прикреплен
-#     if appeal.file_path:
-#         builder.button(text=f"📎 {_('Открыть файл')}", callback_data=f"view_file:{appeal.id}")
-#
-#     # Настройка расположения кнопок
-#     builder.adjust(1)
-#
-#     return response, builder
+# ===================== ОСНОВНЫЕ ФУНКЦИИ =====================
 
 async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardBuilder]:
     """
@@ -93,28 +61,25 @@ async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardB
         'emoji': '📄'
     })
 
-    # Получаем название комиссии (экранируем специальные символы)
+    # Экранируем и форматируем данные
     commission_name = escape(appeal.commission.name) if appeal.commission else _("Не указана")
-
-    # Определяем, нужно ли обрезать текст
     needs_expansion = len(appeal.appeal_text) > PREVIEW_LENGTH
     display_text = escape(appeal.appeal_text[:PREVIEW_LENGTH] + ("..." if needs_expansion else ""))
+    contact_info = escape(appeal.contact_info) if appeal.contact_info else _('Не указана')
 
     # Форматируем даты
-    created_at_formatted = appeal.created_at.strftime("%d.%m.%Y %H:%M")
-    updated_at_formatted = appeal.updated_at.strftime("%d.%m.%Y %H:%M")
+    created_at = appeal.created_at.strftime(DATE_FORMAT)
+    updated_at = appeal.updated_at.strftime(DATE_FORMAT)
 
-    # Формируем текст с HTML-разметкой
+    # Собираем сообщение из шаблонов
     response = (
-        f"<b>📌 Обращение №{appeal.id}</b>\n"
-        f"<i>────────────────</i>\n"
-        f"{status_data['emoji']} <b>Статус:</b> {escape(status_data['display'])}\n\n"
-        f"👥 <b>Комиссия:</b> {commission_name}\n\n"
-        f"📝 <b>Текст обращения:</b>\n<code>{display_text}</code>\n\n"
-        f"📞 <b>Контакты:</b> {escape(appeal.contact_info) if appeal.contact_info else _('Не указана')}\n\n"
-        f"<i>────────────────</i>\n"
-        f"📅 <b>Создано:</b> {created_at_formatted}\n"
-        f"🔄 <b>Обновлено:</b> {updated_at_formatted}"
+        APPEAL_HEADER.format(id=appeal.id, separator=SEPARATOR) +
+        STATUS_LINE.format(emoji=status_data['emoji'], status=escape(status_data['display'])) +
+        COMMISSION_LINE.format(commission=commission_name) +
+        TEXT_HEADER.format(text=display_text) +
+        CONTACTS_LINE.format(contacts=contact_info) +
+        SEPARATOR + "\n" +
+        DATES_LINE.format(created_at=created_at, updated_at=updated_at)
     )
 
     # Создаем клавиатуру
@@ -245,30 +210,29 @@ async def show_full_appeal(callback: CallbackQuery):
             Appeal.objects.select_related('commission').get
         )(id=appeal_id)
 
-        # Получаем данные статуса из общего словаря
+        # Получаем данные статуса
         status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
             'display': appeal.status,
             'emoji': '📄'
         })
 
-        # Экранируем все динамические данные
+        # Экранируем данные
         commission_name = escape(appeal.commission.name) if appeal.commission else _("Не указана")
         appeal_text = escape(appeal.appeal_text)
 
-        # Формируем полную версию с HTML-разметкой
+        # Формируем полную версию из шаблонов
         full_response = (
-            f"<b>📌 Обращение №{appeal_id}</b>\n"
-            f"<i>────────────────</i>\n"
-            f"{status_data['emoji']} <b>Статус:</b> {escape(status_data['display'])}\n\n"
-            f"👥 <b>Комиссия:</b> {commission_name}\n\n"
-            f"📝 <b>Полный текст обращения:</b>\n"
-            f"<code>{appeal_text}</code>\n"
+            FULL_APPEAL_HEADER.format(id=appeal_id, separator=SEPARATOR) +
+            FULL_STATUS_LINE.format(emoji=status_data['emoji'], status=escape(status_data['display'])) +
+            FULL_COMMISSION_LINE.format(commission=commission_name) +
+            FULL_TEXT_HEADER.format(text=appeal_text)
         )
 
+        # Добавляем информацию о файле если есть
         if appeal.file_path:
-            full_response += "\n📎 <i>Прикреплён документ</i>"
+            full_response += FILE_ATTACHMENT_LINE
 
-        # Создаем клавиатуру для полной версии
+        # Создаем клавиатуру
         full_builder = InlineKeyboardBuilder()
         full_builder.button(
             text="↩️ Свернуть",
@@ -281,11 +245,11 @@ async def show_full_appeal(callback: CallbackQuery):
             )
         full_builder.adjust(1)
 
-        # Редактируем существующее сообщение
+        # Редактируем сообщение
         await callback.message.edit_text(
             full_response,
             reply_markup=full_builder.as_markup(),
-            parse_mode='HTML'  # Указываем парсинг HTML
+            parse_mode='HTML'
         )
         await callback.answer()
 
