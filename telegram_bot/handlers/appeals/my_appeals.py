@@ -5,6 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
 from django.utils.translation import gettext as _
 from html import escape
+from typing import Callable, Awaitable
 from ...models import Appeal, StatusChoices
 from ...tools.main_logger import logger
 
@@ -48,7 +49,7 @@ APPEAL_STATUS_MAPPING = {
     }
 }
 
-# ===================== ОСНОВНЫЕ ФУНКЦИИ =====================
+# ===================== ФУНКЦИИ ДЛЯ ХЕНДЛЕРОВ =====================
 
 async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardBuilder]:
     """
@@ -94,6 +95,53 @@ async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardB
     builder.adjust(1)
 
     return response, builder
+
+
+async def process_appeal(
+        callback: CallbackQuery,
+        response_message: str,
+        error_message: str,
+        success_action: Callable[[CallbackQuery], Awaitable[None]] = None
+):
+    """
+    Общая функция для обработки обращений.
+
+    :param callback: CallbackQuery объект
+    :param response_message: Сообщение для успешного ответа пользователю
+    :param error_message: Сообщение об ошибке при проблемах
+    :param success_action: Дополнительное действие после успешной обработки
+    """
+    try:
+        # Извлекаем ID обращения из данных колбэка
+        appeal_id = int(callback.data.split(":")[1])
+
+        # Получаем полные данные обращения
+        appeal = await sync_to_async(
+            Appeal.objects.select_related('commission').get
+        )(id=appeal_id)
+
+        # Генерируем стандартный ответ с HTML-разметкой
+        response, builder = await generate_appeal_response(appeal)
+
+        # Обновляем сообщение с указанием HTML-парсинга
+        await callback.message.edit_text(
+            response,
+            reply_markup=builder.as_markup(),
+            parse_mode='HTML'  # Поддержка HTML-разметки
+        )
+
+        # Вызываем дополнительное действие, если оно указано
+        if success_action:
+            await success_action(callback)
+
+        # Отправляем ответ пользователю
+        await callback.answer(response_message)
+
+    except Appeal.DoesNotExist:
+        await callback.answer("❌ Обращение не найдено", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error in process_appeal: {e}", exc_info=True)
+        await callback.answer(error_message, show_alert=True)
 
 
 @router.message(F.text == "Отследить статус обращения")
@@ -263,31 +311,11 @@ async def show_full_appeal(callback: CallbackQuery):
 # Обработчик нажатия на кнопку "Свернуть"
 @router.callback_query(F.data.startswith("collapse:"))
 async def collapse_appeal(callback: CallbackQuery):
-    try:
-        appeal_id = int(callback.data.split(":")[1])
-        appeal = await sync_to_async(
-            Appeal.objects.select_related('commission').get
-        )(id=appeal_id)
-
-        # Получаем сокращенную версию с помощью нашей функции
-        response, builder = await generate_appeal_response(appeal)
-
-        # Редактируем сообщение с указанием HTML-разметки
-        await callback.message.edit_text(
-            response,
-            reply_markup=builder.as_markup(),
-            parse_mode='HTML'  # Важно добавить для корректного отображения
-        )
-        await callback.answer("↩️ Обращение свернуто")
-
-    except Appeal.DoesNotExist:
-        await callback.answer("❌ Обращение не найдено", show_alert=True)
-    except Exception as e:
-        logger.error(f"Error in collapse_appeal: {e}", exc_info=True)
-        await callback.answer(
-            "⚠️ Не удалось свернуть обращение",
-            show_alert=True
-        )
+    await process_appeal(
+        callback=callback,
+        response_message="↩️ Обращение свернуто",
+        error_message="⚠️ Не удалось свернуть обращение"
+    )
 
 
 # Обработчик нажатия на кнопку "Удалить"
@@ -379,30 +407,8 @@ async def confirm_delete_appeal(callback: CallbackQuery):
 # Обработчик отмены удаления
 @router.callback_query(F.data.startswith("cancel_delete:"))
 async def cancel_delete_appeal(callback: CallbackQuery):
-    try:
-        appeal_id = int(callback.data.split(":")[1])
-
-        # Получаем полные данные обращения
-        appeal = await sync_to_async(
-            Appeal.objects.select_related('commission').get
-        )(id=appeal_id)
-
-        # Генерируем стандартный ответ с HTML-разметкой
-        response, builder = await generate_appeal_response(appeal)
-
-        # Обновляем сообщение с указанием HTML-парсинга
-        await callback.message.edit_text(
-            response,
-            reply_markup=builder.as_markup(),
-            parse_mode='HTML'  # Добавляем поддержку HTML-разметки
-        )
-        await callback.answer("❌ Удаление отменено")
-
-    except Appeal.DoesNotExist:
-        await callback.answer("❌ Обращение не найдено", show_alert=True)
-    except Exception as e:
-        logger.error(f"Error in cancel_delete_appeal: {e}", exc_info=True)
-        await callback.answer(
-            "⚠️ Не удалось отменить удаление",
-            show_alert=True
-        )
+    await process_appeal(
+        callback=callback,
+        response_message="❌ Удаление отменено",
+        error_message="⚠️ Не удалось отменить удаление"
+    )
