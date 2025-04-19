@@ -1,78 +1,131 @@
-
 from aiogram import Router, F
 from aiogram.types import FSInputFile, InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asgiref.sync import sync_to_async
-
-from ...models import Appeal
+from django.utils.translation import gettext as _
+from html import escape
+from ...models import Appeal, StatusChoices
 from ...tools.main_logger import logger
 
 router = Router()
 
-# Кастомизированные эмодзи для статусов
-STATUS_EMOJIS = {
-    'новое': '🆕',
-    'обработано': '✅',
-    'отклонено': '❌'
+# Константы
+PREVIEW_LENGTH = 300  # Количество символов для предпросмотра текста обращения
+
+# Словарь для соответствия статусов обращений и их отображения
+APPEAL_STATUS_MAPPING = {
+    StatusChoices.NEW: {
+        'display': _('Новое'),
+        'emoji': '🆕'
+    },
+    StatusChoices.PROCESSED: {
+        'display': _('Обработано'),
+        'emoji': '✅'
+    },
+    StatusChoices.REJECTED: {
+        'display': _('Отклонено'),
+        'emoji': '❌'
+    }
 }
 
-# Словарь для красивого отображения статусов
-STATUS_DISPLAY_NAMES = {
-    'новое': 'Новое',
-    'обработано': 'Обработано',
-    'отклонено': 'Отклонено'
-}
 
+# async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardBuilder]:
+#     """
+#     Генерирует текст ответа и клавиатуру для обращения.
+#     Возвращает кортеж (текст, клавиатура)
+#     """
+#     # Получаем данные статуса
+#     status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
+#         'display': appeal.status,
+#         'emoji': '📄'
+#     })
+#
+#     # Получаем название комиссии
+#     commission_name = appeal.commission.name if appeal.commission else _("Не указана")
+#
+#     # Определяем, нужно ли обрезать текст
+#     needs_expansion = len(appeal.appeal_text) > PREVIEW_LENGTH
+#     display_text = appeal.appeal_text[:PREVIEW_LENGTH] + "..." if needs_expansion else appeal.appeal_text
+#
+#     # Форматируем даты
+#     created_at_formatted = appeal.created_at.strftime("%d.%m.%Y %H:%M")
+#     updated_at_formatted = appeal.updated_at.strftime("%d.%m.%Y %H:%M")
+#
+#     # Формируем текст
+#     response = (
+#         f"📌 {_('Обращение')} №{appeal.id}\n"
+#         f"{status_data['emoji']} {_('Статус')}: {status_data['display']}\n"
+#         f"👥 {_('Комиссия')}: {commission_name}\n"
+#         f"📝 {_('Текст')}: {display_text}\n"
+#         f"📞 {_('Контактная информация')}: {appeal.contact_info or _('Не указана')}\n"
+#         f"📅 {_('Дата создания')}: {created_at_formatted}\n"
+#         f"🔄 {_('Последнее обновление')}: {updated_at_formatted}"
+#     )
+#
+#     # Создаем клавиатуру
+#     builder = InlineKeyboardBuilder()
+#
+#     # Добавляем кнопку "Показать полностью" только если текст обрезан
+#     if needs_expansion:
+#         builder.button(text=f"📄 {_('Показать полностью')}", callback_data=f"show_full:{appeal.id}")
+#
+#     # Кнопка "Удалить"
+#     builder.button(text=f"🗑 {_('Удалить')}", callback_data=f"delete_appeal:{appeal.id}")
+#
+#     # Кнопка "Открыть файл", если файл прикреплен
+#     if appeal.file_path:
+#         builder.button(text=f"📎 {_('Открыть файл')}", callback_data=f"view_file:{appeal.id}")
+#
+#     # Настройка расположения кнопок
+#     builder.adjust(1)
+#
+#     return response, builder
 
 async def generate_appeal_response(appeal: Appeal) -> tuple[str, InlineKeyboardBuilder]:
     """
     Генерирует текст ответа и клавиатуру для обращения.
     Возвращает кортеж (текст, клавиатура)
     """
-    # Нормализуем статус
-    status_lower = appeal.status.lower()
-    status_display = STATUS_DISPLAY_NAMES.get(status_lower, appeal.status)
-    status_emoji = STATUS_EMOJIS.get(status_lower, '📄')
+    # Получаем данные статуса
+    status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
+        'display': appeal.status,
+        'emoji': '📄'
+    })
 
-    # Получаем название комиссии
-    commission_name = appeal.commission.name if appeal.commission else "Не указана"
+    # Получаем название комиссии (экранируем специальные символы)
+    commission_name = escape(appeal.commission.name) if appeal.commission else _("Не указана")
 
     # Определяем, нужно ли обрезать текст
-    preview_length = 300  # Количество символов для предпросмотра
-    needs_expansion = len(appeal.appeal_text) > preview_length
-    display_text = appeal.appeal_text[:preview_length] + "..." if needs_expansion else appeal.appeal_text
+    needs_expansion = len(appeal.appeal_text) > PREVIEW_LENGTH
+    display_text = escape(appeal.appeal_text[:PREVIEW_LENGTH] + ("..." if needs_expansion else ""))
 
     # Форматируем даты
     created_at_formatted = appeal.created_at.strftime("%d.%m.%Y %H:%M")
     updated_at_formatted = appeal.updated_at.strftime("%d.%m.%Y %H:%M")
 
-    # Формируем текст
+    # Формируем текст с HTML-разметкой
     response = (
-        f"📌 Обращение №{appeal.id}\n"
-        f"{status_emoji} Статус: {status_display}\n"
-        f"👥 Комиссия: {commission_name}\n"
-        f"📝 Текст: {display_text}\n"
-        f"📞 Контактная информация: {appeal.contact_info or 'Не указана'}\n"
-        f"📅 Дата создания: {created_at_formatted}\n"
-        f"🔄 Последнее обновление: {updated_at_formatted}"
+        f"<b>📌 Обращение №{appeal.id}</b>\n"
+        f"<i>────────────────</i>\n"
+        f"{status_data['emoji']} <b>Статус:</b> {escape(status_data['display'])}\n\n"
+        f"👥 <b>Комиссия:</b> {commission_name}\n\n"
+        f"📝 <b>Текст обращения:</b>\n<code>{display_text}</code>\n\n"
+        f"📞 <b>Контакты:</b> {escape(appeal.contact_info) if appeal.contact_info else _('Не указана')}\n\n"
+        f"<i>────────────────</i>\n"
+        f"📅 <b>Создано:</b> {created_at_formatted}\n"
+        f"🔄 <b>Обновлено:</b> {updated_at_formatted}"
     )
 
     # Создаем клавиатуру
     builder = InlineKeyboardBuilder()
 
-    # Добавляем кнопку "Показать полностью" только если текст обрезан
+    # Добавляем кнопки
     if needs_expansion:
-        builder.button(text="📄 Показать полностью", callback_data=f"show_full:{appeal.id}")
-
-    # Кнопка "Удалить"
-    builder.button(text="🗑 Удалить", callback_data=f"delete_appeal:{appeal.id}")
-
-    # Кнопка "Открыть файл", если файл прикреплен
+        builder.button(text=f"📄 {_('Показать полностью')}", callback_data=f"show_full:{appeal.id}")
+    builder.button(text=f"🗑 {_('Удалить')}", callback_data=f"delete_appeal:{appeal.id}")
     if appeal.file_path:
-        builder.button(text="📎 Открыть файл", callback_data=f"view_file:{appeal.id}")
-
-    # Настройка расположения кнопок
+        builder.button(text=f"📎 {_('Открыть файл')}", callback_data=f"view_file:{appeal.id}")
     builder.adjust(1)
 
     return response, builder
@@ -98,20 +151,16 @@ async def track_appeal_status(message: Message, user=None):
         builder = InlineKeyboardBuilder()
 
         for appeal in appeals:
-            # Нормализуем статус (на случай разных регистров)
-            status_lower = appeal.status.lower()
-
-            # Получаем эмодзи и отображаемое имя статуса
-            status_emoji = STATUS_EMOJIS.get(status_lower, '📄')
-            status_display = STATUS_DISPLAY_NAMES.get(status_lower, appeal.status)
-
-            # Получаем название комиссии
-            commission_name = appeal.commission.name if appeal.commission else "Без комиссии"
+            # Получаем данные статуса
+            status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
+                'display': appeal.status,
+                'emoji': '📄'
+            })
 
             # Формируем текст кнопки
             button_text = (
-                f"№{appeal.id} | {status_emoji} {status_display} | "
-                f"{commission_name}"
+                f"№{appeal.id} | {status_data['emoji']} {status_data['display']} | "
+                f"{escape(appeal.commission.name)}"
             )
 
             builder.add(InlineKeyboardButton(
@@ -142,14 +191,19 @@ async def show_appeal_detail(callback: CallbackQuery):
         # Генерируем ответ и клавиатуру
         response, builder = await generate_appeal_response(appeal)
 
-        await callback.message.answer(response, reply_markup=builder.as_markup())
+        # Отправляем сообщение с HTML-разметкой
+        await callback.message.answer(
+            response,
+            reply_markup=builder.as_markup(),
+            parse_mode='HTML'  # Добавляем парсинг HTML
+        )
         await callback.answer()
 
     except Appeal.DoesNotExist:
         await callback.answer("❌ Обращение не найдено!", show_alert=True)
     except Exception as e:
         logger.error(f"Error in show_appeal_detail: {e}")
-        await callback.answer("⚠️ Произошла ошибка!", show_alert=True)
+        await callback.answer("⚠️ Произошла ошибка при загрузке обращения!", show_alert=True)
 
 
 # Обработчик для кнопки "Посмотреть файл"
@@ -191,26 +245,30 @@ async def show_full_appeal(callback: CallbackQuery):
             Appeal.objects.select_related('commission').get
         )(id=appeal_id)
 
-        # Получаем сокращенную версию сообщения
-        short_response, builder = await generate_appeal_response(appeal)
+        # Получаем данные статуса из общего словаря
+        status_data = APPEAL_STATUS_MAPPING.get(appeal.status.lower(), {
+            'display': appeal.status,
+            'emoji': '📄'
+        })
 
-        # Формируем полную версию
-        status_emoji = STATUS_EMOJIS.get(appeal.status.lower(), '📄')
-        status_display = STATUS_DISPLAY_NAMES.get(appeal.status.lower(), appeal.status)
-        commission_name = appeal.commission.name if appeal.commission else "Не указана"
+        # Экранируем все динамические данные
+        commission_name = escape(appeal.commission.name) if appeal.commission else _("Не указана")
+        appeal_text = escape(appeal.appeal_text)
 
+        # Формируем полную версию с HTML-разметкой
         full_response = (
-            f"📌 Обращение №{appeal_id}\n"
-            f"{status_emoji} Статус: {status_display}\n"
-            f"👥 Комиссия: {commission_name}\n\n"
-            f"📝 Полный текст:\n\n"
-            f"{appeal.appeal_text}\n"
+            f"<b>📌 Обращение №{appeal_id}</b>\n"
+            f"<i>────────────────</i>\n"
+            f"{status_data['emoji']} <b>Статус:</b> {escape(status_data['display'])}\n\n"
+            f"👥 <b>Комиссия:</b> {commission_name}\n\n"
+            f"📝 <b>Полный текст обращения:</b>\n"
+            f"<code>{appeal_text}</code>\n"
         )
 
         if appeal.file_path:
-            full_response += "\n📎 Прикреплён документ"
+            full_response += "\n📎 <i>Прикреплён документ</i>"
 
-        # Создаем кнопки для полной версии
+        # Создаем клавиатуру для полной версии
         full_builder = InlineKeyboardBuilder()
         full_builder.button(
             text="↩️ Свернуть",
@@ -223,27 +281,22 @@ async def show_full_appeal(callback: CallbackQuery):
             )
         full_builder.adjust(1)
 
-        # Если это ответ на существующее сообщение - редактируем его
-        if callback.message:
-            await callback.message.edit_text(
-                full_response,
-                reply_markup=full_builder.as_markup()
-            )
-        else:
-            await callback.message.answer(
-                full_response,
-                reply_markup=full_builder.as_markup()
-            )
-
+        # Редактируем существующее сообщение
+        await callback.message.edit_text(
+            full_response,
+            reply_markup=full_builder.as_markup(),
+            parse_mode='HTML'  # Указываем парсинг HTML
+        )
         await callback.answer()
 
     except Appeal.DoesNotExist:
         await callback.answer("❌ Обращение не найдено", show_alert=True)
     except Exception as e:
         logger.error(f"Error in show_full_appeal: {e}", exc_info=True)
-        await callback.answer("⚠️ Ошибка при загрузке", show_alert=True)
+        await callback.answer("⚠️ Ошибка при загрузке полного текста", show_alert=True)
 
 
+# Обработчик нажатия на кнопку "Свернуть"
 @router.callback_query(F.data.startswith("collapse:"))
 async def collapse_appeal(callback: CallbackQuery):
     try:
@@ -252,19 +305,25 @@ async def collapse_appeal(callback: CallbackQuery):
             Appeal.objects.select_related('commission').get
         )(id=appeal_id)
 
-        # Получаем сокращенную версию
+        # Получаем сокращенную версию с помощью нашей функции
         response, builder = await generate_appeal_response(appeal)
 
-        # Редактируем сообщение обратно
+        # Редактируем сообщение с указанием HTML-разметки
         await callback.message.edit_text(
             response,
-            reply_markup=builder.as_markup()
+            reply_markup=builder.as_markup(),
+            parse_mode='HTML'  # Важно добавить для корректного отображения
         )
-        await callback.answer()
+        await callback.answer("↩️ Обращение свернуто")
 
+    except Appeal.DoesNotExist:
+        await callback.answer("❌ Обращение не найдено", show_alert=True)
     except Exception as e:
-        logger.error(f"Error in collapse_appeal: {e}")
-        await callback.answer("⚠️ Ошибка при сворачивании", show_alert=True)
+        logger.error(f"Error in collapse_appeal: {e}", exc_info=True)
+        await callback.answer(
+            "⚠️ Не удалось свернуть обращение",
+            show_alert=True
+        )
 
 
 # Обработчик нажатия на кнопку "Удалить"
@@ -302,29 +361,54 @@ async def confirm_delete_appeal(callback: CallbackQuery):
         appeal_id = int(callback.data.split(":")[1])
         appeal = await sync_to_async(Appeal.objects.get)(id=appeal_id)
 
-        # Удаляем файл если он есть
+        # Удаляем файл, если он есть (с улучшенным логированием)
         if appeal.file_path:
             try:
-                await sync_to_async(appeal.file_path.storage.delete)(appeal.file_path.name)
-            except Exception as e:
-                logger.error(f"File delete error: {e}")
+                file_path = appeal.file_path.name
+                storage = appeal.file_path.storage
+                await sync_to_async(storage.delete)(file_path)
+                logger.info(f"Файл обращения {appeal_id} успешно удалён: {file_path}")
+            except Exception as file_error:
+                logger.error(f"Ошибка удаления файла обращения {appeal_id}: {file_error}")
 
         # Удаляем запись
         await sync_to_async(appeal.delete)()
+        logger.info(f"Обращение {appeal_id} успешно удалено")
+
+        # Форматируем сообщение об успехе с HTML
+        success_message = (
+            f"<b>✅ Обращение №{appeal_id} удалено</b>\n\n"
+            f"<i>Все данные и прикреплённые файлы были безвозвратно удалены.</i>"
+        )
 
         # Обновляем сообщение
         await callback.message.edit_text(
-            "✅ Обращение успешно удалено",
-            reply_markup=None  # Убираем все кнопки
+            success_message,
+            reply_markup=None,
+            parse_mode='HTML'  # Добавляем поддержку HTML
         )
-        await callback.answer()
+        await callback.answer("Обращение удалено")
 
     except Appeal.DoesNotExist:
-        await callback.message.edit_text("❌ Обращение не найдено")
+        error_message = (
+            f"<b>❌ Обращение №{appeal_id} не найдено</b>\n\n"
+            f"Возможно, оно было удалено ранее."
+        )
+        await callback.message.edit_text(
+            error_message,
+            parse_mode='HTML'
+        )
         await callback.answer()
     except Exception as e:
-        logger.error(f"Error in confirm_delete: {e}", exc_info=True)
-        await callback.message.edit_text("⚠️ Ошибка при удалении")
+        logger.error(f"Ошибка удаления обращения {appeal_id}: {e}", exc_info=True)
+        error_message = (
+            f"<b>⚠️ Ошибка при удалении обращения №{appeal_id}</b>\n\n"
+            f"Попробуйте позже или обратитесь к администратору."
+        )
+        await callback.message.edit_text(
+            error_message,
+            parse_mode='HTML'
+        )
         await callback.answer()
 
 
@@ -339,18 +423,22 @@ async def cancel_delete_appeal(callback: CallbackQuery):
             Appeal.objects.select_related('commission').get
         )(id=appeal_id)
 
-        # Генерируем стандартный ответ
+        # Генерируем стандартный ответ с HTML-разметкой
         response, builder = await generate_appeal_response(appeal)
 
-        # Обновляем сообщение
+        # Обновляем сообщение с указанием HTML-парсинга
         await callback.message.edit_text(
             response,
-            reply_markup=builder.as_markup()
+            reply_markup=builder.as_markup(),
+            parse_mode='HTML'  # Добавляем поддержку HTML-разметки
         )
         await callback.answer("❌ Удаление отменено")
 
     except Appeal.DoesNotExist:
         await callback.answer("❌ Обращение не найдено", show_alert=True)
     except Exception as e:
-        logger.error(f"Error in cancel_delete: {e}", exc_info=True)
-        await callback.answer("⚠️ Ошибка при отмене", show_alert=True)
+        logger.error(f"Error in cancel_delete_appeal: {e}", exc_info=True)
+        await callback.answer(
+            "⚠️ Не удалось отменить удаление",
+            show_alert=True
+        )
