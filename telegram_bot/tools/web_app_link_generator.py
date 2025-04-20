@@ -1,13 +1,22 @@
 from decouple import config
 from telegram_bot.tools.secret_token_generator import generate_token
-from .main_logger import logger
 
-TELEGRAM_BOT_BACKEND_BASE_URL = config('TELEGRAM_BOT_BACKEND_BASE_URL')
+TELEGRAM_WEBAPP_HOST = config('TELEGRAM_WEBAPP_HOST')
+APP_NAME = config('APP_NAME')
+FRONTEND_CORS_ORIGIN = config('FRONTEND_CORS_ORIGIN')
 
-def generate_personal_link(telegram_id: int) -> str:
+
+# def generate_personal_link(telegram_id: int) -> str:
+#     """
+#     Генерирует персональную ссылку на личный кабинет.
+#     """
+#     token = generate_token(telegram_id)
+#     personal_link = f"https://{TELEGRAM_WEBAPP_HOST}/{APP_NAME}/api/v1/service/frontend_redirect_url/{token}"
+#     return personal_link
+
+def generate_personal_link() -> str:
     """
-    Генерирует персональную ссылку на личный кабинет.
+    Генерирует ссылку на личный кабинет для Telegram WebApp.
     """
-    token = generate_token(telegram_id)
-    personal_link = f"{TELEGRAM_BOT_BACKEND_BASE_URL}/api/v1/service/frontend_redirect_url/{token}"
+    personal_link = f"https://{TELEGRAM_WEBAPP_HOST}/{FRONTEND_CORS_ORIGIN}"
     return personal_link

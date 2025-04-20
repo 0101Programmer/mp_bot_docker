@@ -2,58 +2,33 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
-import { useConfigStore } from '@/stores/configStore'; // Импортируем хранилище конфигурации
+import { useConfigStore } from '@/stores/configStore';
+import { useInitializeUserFromTelegram } from '@/composables/useInitializeUserFromTelegram';
 
 // Инициализируем хранилище и роутер
 const userStore = useUserStore();
-const configStore = useConfigStore(); // Инициализируем хранилище конфигурации
+const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 
 // Функция для проверки, нужно ли показывать навбар
 const shouldShowNavbar = computed(() => {
-  const excludedPaths = ['/success', '/error', '/']; // Список путей, где навбар не нужен
+  const excludedPaths = ['/success', '/error']; // Список путей, где навбар не нужен
   return !excludedPaths.includes(route.path);
 });
 
-// Функция для выхода
-const logout = async () => {
-  try {
-    // Получаем telegram_id из хранилища
-    const telegramId = userStore.userData?.telegram_id;
-    if (!telegramId) {
-      throw new Error('Telegram ID не найден.');
-    }
+// Вычисляемое свойство для имени пользователя
+const username = computed(() => {
+  return userStore.username || 'Гость'; // Если username отсутствует, показываем "Гость"
+});
 
-    // Отправляем запрос на выход с query-параметром
-    const response = await fetch(`${configStore.backendBaseUrl}/api/v1/service/logout/?telegram_id=${telegramId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Ошибка при выходе.');
-    }
-
-    // Получаем данные из ответа
-    const data = await response.json();
-
-    // Очищаем данные пользователя в хранилище
-    userStore.clearUserData();
-
-    // Перенаправляем на страницу успеха с сообщением
-    await router.push(`/success?message=${encodeURIComponent(data.message)}`);
-  } catch (error) {
-    console.error('Ошибка:', error.message);
-    alert(`Ошибка при выходе: ${error.message}`);
-  }
-};
+// Инициализация данных пользователя из Telegram WebApp
+useInitializeUserFromTelegram();
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-900 text-white">
+
     <!-- Навигационное меню -->
     <nav v-if="shouldShowNavbar" class="bg-gray-800 shadow-md p-4">
       <div class="container mx-auto flex justify-between items-center">
@@ -103,16 +78,13 @@ const logout = async () => {
             </router-link>
           </li>
         </ul>
-
-        <!-- Кнопка выхода -->
-        <button
-          @click="logout"
-          class="text-red-500 hover:text-red-400 transition-colors duration-200"
-        >
-          Выйти
-        </button>
       </div>
     </nav>
+
+    <!-- Приветствие -->
+    <div v-if="shouldShowNavbar" class="container mx-auto p-4 text-center text-blue-400">
+      Добро пожаловать, {{ username }}!
+    </div>
 
     <!-- Основной контент -->
     <router-view></router-view>

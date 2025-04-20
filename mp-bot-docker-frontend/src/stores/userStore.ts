@@ -1,70 +1,21 @@
 import { defineStore } from 'pinia';
-import { useConfigStore } from './configStore';
-import axios from 'axios';
-
-interface UserData {
-  id: number;
-  telegram_id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  is_admin: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    userData: null as UserData | null,
-    authToken: localStorage.getItem('authToken') || null,
+    username: null as string | null,
+    telegramId: null as number | null,
+    isLoggedIn: false,
   }),
   actions: {
-    setUserData(data: UserData) {
-      this.userData = data;
+    setUser(username: string, telegramId: number) {
+      this.username = username;
+      this.telegramId = telegramId;
+      this.isLoggedIn = true;
     },
-    setAuthToken(token: string) {
-      this.authToken = token;
-      localStorage.setItem('authToken', token);
-    },
-    clearUserData() {
-      this.userData = null;
-      this.authToken = null;
-      localStorage.removeItem('authToken');
-    },
-    getApiUrl(endpoint: string): string {
-      const configStore = useConfigStore();
-      return `${configStore.backendBaseUrl}/api/v1/service/${endpoint}`;
-    },
-    async loadUserData() {
-      if (!this.authToken) {
-        throw new Error('Токен отсутствует');
-      }
-
-      try {
-        const backendUrl = this.getApiUrl(`get_user_data/${this.authToken}/`);
-
-        const response = await axios.get(backendUrl, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        this.setUserData(response.data);
-      } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            this.clearUserData();
-            throw new Error('Токен недействителен. Пожалуйста, авторизуйтесь заново.');
-          }
-        } else if (error instanceof Error) {
-          console.error('Ошибка при загрузке данных пользователя:', error.message);
-        } else {
-          console.error('Ошибка при загрузке данных пользователя: Неизвестная ошибка');
-        }
-
-        this.clearUserData();
-        throw error;
-      }
+    clearUser() {
+      this.username = null;
+      this.telegramId = null;
+      this.isLoggedIn = false;
     },
   },
 });

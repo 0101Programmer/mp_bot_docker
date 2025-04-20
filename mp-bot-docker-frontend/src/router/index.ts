@@ -18,7 +18,7 @@ import SentAdminRequest from "@/pages/user/SentAdminRequest.vue";
 const routes = [
   { path: '/account', component: Account },
   { path: '/error', component: ErrorPage },
-  { path: '/', component: Home },
+  { path: '/home', component: Home },
   { path: '/my_appeals', component: MyAppeals },
   {
   path: '/success',

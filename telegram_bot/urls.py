@@ -1,5 +1,6 @@
 from django.urls import path
 
+from telegram_bot import views
 from telegram_bot.api_views.admin.admin_requests.get_update_delete_admin_requests import AdminRequestListView, \
     UpdateAdminRequestStatusView, DeleteAdminRequestView
 from telegram_bot.api_views.admin.appeals.get_update_delete_appeal import AppealListForAdminView, \
@@ -23,7 +24,7 @@ from telegram_bot.api_views.user.appeals.get_appeals import AppealListView
 urlpatterns = [
     # api для сервисного взаимодействия с пользователем
     path('api/v1/service/get_user_data/<str:token>/', UserDataView.as_view(), name='user_data'),
-    path('api/v1/service/frontend_redirect_url/<str:token>/', redirect_to_frontend, name='redirect_to_frontend'),
+    path('api/v1/service/frontend_redirect_url/', redirect_to_frontend, name='redirect_to_frontend'),
     path('api/v1/service/logout/', LogoutView.as_view(), name='logout'),
 
 
@@ -59,5 +60,4 @@ urlpatterns = [
     path('api/v1/admin/update_admin_request_status/<int:request_id>/', UpdateAdminRequestStatusView.as_view(),
          name='update-admin-request-status'),
     path('api/v1/admin/delete_admin_request/<int:request_id>/', DeleteAdminRequestView.as_view(), name='delete-admin-request'),
-
 ]
