@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from './configStore';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
 interface UserData {
   id: number;
@@ -27,11 +27,8 @@ export const useUserStore = defineStore('user', {
       localStorage.setItem('authToken', token);
     },
     clearUserData() {
-      // Очищаем состояние Pinia
       this.userData = null;
       this.authToken = null;
-
-      // Очищаем localStorage
       localStorage.removeItem('authToken');
     },
     getApiUrl(endpoint: string): string {
@@ -53,14 +50,18 @@ export const useUserStore = defineStore('user', {
         });
 
         this.setUserData(response.data);
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          // Если токен недействителен, очищаем данные и выбрасываем ошибку
-          this.clearUserData();
-          throw new Error('Токен недействителен. Пожалуйста, авторизуйтесь заново.');
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            this.clearUserData();
+            throw new Error('Токен недействителен. Пожалуйста, авторизуйтесь заново.');
+          }
+        } else if (error instanceof Error) {
+          console.error('Ошибка при загрузке данных пользователя:', error.message);
+        } else {
+          console.error('Ошибка при загрузке данных пользователя: Неизвестная ошибка');
         }
 
-        console.error('Ошибка при загрузке данных пользователя:', error.message || 'Неизвестная ошибка');
         this.clearUserData();
         throw error;
       }
