@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue'; // Импортируем onMounted
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
 import { useConfigStore } from '@/stores/configStore';
@@ -22,8 +22,24 @@ const username = computed(() => {
   return userStore.username || 'Гость'; // Если username отсутствует, показываем "Гость"
 });
 
+// Вычисляемое свойство для айди пользователя
+const telegramId = computed(() => {
+  return userStore.telegramId || 'ID отсутствует';
+});
+
 // Инициализация данных пользователя из Telegram WebApp
 useInitializeUserFromTelegram();
+
+// Загружаем данные пользователя после инициализации
+onMounted(async () => {
+  const currentTelegramId = telegramId.value; // Получаем текущий telegramId из вычисляемого свойства
+
+  if (currentTelegramId && currentTelegramId !== 'ID отсутствует') {
+    await userStore.loadUserDataFromBackend(Number(currentTelegramId)); // Преобразуем в число
+  } else {
+    console.error('Telegram ID is not set or invalid.');
+  }
+});
 </script>
 
 <template>
@@ -33,7 +49,7 @@ useInitializeUserFromTelegram();
     <nav v-if="shouldShowNavbar" class="bg-gray-800 shadow-md p-4">
       <div class="container mx-auto flex justify-between items-center">
         <!-- Логотип -->
-        <div class="text-lg font-bold text-blue-400">MP BOT DOCKER</div>
+        <div class="text-lg font-bold text-blue-400">Youth Parliament Bot</div>
 
         <!-- Ссылки -->
         <ul class="flex space-x-4">

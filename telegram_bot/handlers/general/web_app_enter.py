@@ -7,37 +7,6 @@ from ...tools.web_app_link_generator import generate_personal_link
 
 router = Router()
 
-
-
-# @router.message(Command("account"))
-# async def cmd_account(message: Message, user=None):
-#     """
-#     Обрабатывает команду /account и отправляет кнопку с персональной ссылкой на личный кабинет.
-#     :param user: Пользователь, полученный из middleware
-#     """
-#     try:
-#         # Генерируем персональную ссылку
-#         web_app_url = generate_personal_link(user.telegram_id)
-#
-#         # Создаем кнопку Web App
-#         keyboard = InlineKeyboardMarkup(
-#             inline_keyboard=[
-#                 [InlineKeyboardButton(text="🌟 Открыть личный кабинет ✨", web_app=WebAppInfo(url=web_app_url))]
-#             ],
-#             resize_keyboard=True
-#         )
-#
-#         await message.answer(
-#             "✨ <b>Добро пожаловать!</b> ✨\n\n"
-#             "Нажмите на кнопку ниже, чтобы открыть личный кабинет:",
-#             reply_markup=keyboard,
-#             parse_mode='HTML'
-#         )
-#
-#     except Exception as e:
-#         logger.error(f"Ошибка в /account: {e}")
-#         await message.answer("Произошла ошибка. Попробуйте позже.")
-
 @router.message(Command("account"))
 async def cmd_account(message: Message, user=None):
     """
@@ -47,6 +16,7 @@ async def cmd_account(message: Message, user=None):
     try:
         # Генерируем ссылку на WebApp
         web_app_url = generate_personal_link()
+        print(web_app_url)
 
         # Создаем кнопку Web App
         keyboard = InlineKeyboardMarkup(

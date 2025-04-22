@@ -14,7 +14,11 @@ export function useInitializeUserFromTelegram() {
 
         // Сохраняем данные в хранилище
         userStore.setUser(username || 'Гость', id);
+      } else {
+        console.error('Telegram WebApp initDataUnsafe does not contain user data.');
       }
+    } else {
+      console.error('Telegram WebApp is not available.');
     }
   });
 }

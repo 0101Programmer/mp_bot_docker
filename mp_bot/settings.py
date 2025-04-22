@@ -201,6 +201,7 @@ logger = logging.getLogger('django')
 # Настройка CORS для фронтенд
 CORS_ALLOWED_ORIGINS = [
     config('FRONTEND_CORS_ORIGIN'),
+    config('TELEGRAM_WEBAPP_HOST_FOR_CORS'),
 ]
 
 INSTALLED_APPS += [

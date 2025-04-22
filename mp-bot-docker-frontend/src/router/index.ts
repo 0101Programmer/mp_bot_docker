@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Account from '@/pages/common/Account.vue';
 import ErrorPage from '@/pages/service/ErrorPage.vue';
-import Home from '@/pages/common/Home.vue';
 import MyAppeals from "@/pages/common/MyAppeals.vue";
 import Success from "@/pages/service/Success.vue";
 import CreateAppeal from "@/pages/common/CreateAppeal.vue";
@@ -18,7 +17,6 @@ import SentAdminRequest from "@/pages/user/SentAdminRequest.vue";
 const routes = [
   { path: '/account', component: Account },
   { path: '/error', component: ErrorPage },
-  { path: '/home', component: Home },
   { path: '/my_appeals', component: MyAppeals },
   {
   path: '/success',
