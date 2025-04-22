@@ -7,19 +7,13 @@ export const useUserStore = defineStore('user', {
     username: null as string | null,
     telegramId: null as number | null,
     isLoggedIn: false,
-    databaseData: null as any | null, // Дополнительные данные из БД
+    userData: null as any | null, // Данные пользователя из БД
   }),
   actions: {
     setUser(username: string, telegramId: number) {
       this.username = username;
       this.telegramId = telegramId;
       this.isLoggedIn = true;
-    },
-    clearUser() {
-      this.username = null;
-      this.telegramId = null;
-      this.isLoggedIn = false;
-      this.databaseData = null;
     },
     async loadUserDataFromBackend(telegramId: number) {
       if (!telegramId) {
@@ -48,7 +42,7 @@ export const useUserStore = defineStore('user', {
         );
 
         console.log('Response from backend:', response.data);
-        this.databaseData = response.data;
+        this.userData = response.data; // Сохраняем данные в userData
       } catch (error) {
         console.error('Failed to load user data from backend:', error);
 
@@ -62,6 +56,14 @@ export const useUserStore = defineStore('user', {
           console.error('Error message:', error.message);
         }
       }
+    },
+    async loadUserData() {
+      if (!this.telegramId) {
+        console.error('Telegram ID is not set. Cannot load user data.');
+        return;
+      }
+
+      await this.loadUserDataFromBackend(this.telegramId);
     },
   },
 });

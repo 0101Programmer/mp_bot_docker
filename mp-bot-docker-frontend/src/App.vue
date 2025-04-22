@@ -22,6 +22,11 @@ const username = computed(() => {
   return userStore.username || 'Гость'; // Если username отсутствует, показываем "Гость"
 });
 
+// Функция для проверки, нужно ли показывать приветствие
+const shouldShowWelcome = computed(() => {
+  return route.path === '/'; // Показываем приветствие только на главной странице
+});
+
 // Инициализация данных пользователя из Telegram WebApp
 useInitializeUserFromTelegram();
 
@@ -93,7 +98,7 @@ onMounted(async () => {
     </nav>
 
     <!-- Приветствие -->
-    <div v-if="shouldShowNavbar" class="container mx-auto p-4 text-center text-blue-400">
+    <div v-if="shouldShowNavbar && shouldShowWelcome" class="container mx-auto p-4 text-center text-blue-400">
       Добро пожаловать, {{ username }}!
     </div>
 
