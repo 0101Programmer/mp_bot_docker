@@ -69,11 +69,6 @@ const deleteAppeal = async (appealId: number) => {
 // Функция для загрузки данных через API
 onMounted(async () => {
   try {
-    // Если токена нет, перенаправляем на страницу ошибки
-    if (!userStore.authToken) {
-      throw new Error('Токен отсутствует. Пожалуйста, авторизуйтесь.');
-    }
-
     // Если данные пользователя отсутствуют, загружаем их
     if (!userStore.userData) {
       await userStore.loadUserData();
