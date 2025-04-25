@@ -7,9 +7,4 @@ export const useConfigStore = defineStore('config', {
     maxTxtLength: parseInt(import.meta.env.VITE_MAX_TXT_LENGTH),
     maxFileSizeMb: parseInt(import.meta.env.VITE_MAX_FILE_SIZE) / (1024 * 1024),
   }),
-  actions: {
-    setBackendBaseUrl(url: string) {
-      this.backendBaseUrl = url;
-    },
-  },
 });

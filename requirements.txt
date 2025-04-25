@@ -14,6 +14,7 @@ django-redis==5.4.0
 djangorestframework==3.16.0
 frozenlist==1.5.0
 idna==3.10
+lark==1.2.2
 magic-filter==1.0.12
 multidict==6.2.0
 propcache==0.3.0
@@ -21,6 +22,7 @@ psycopg2-binary==2.9.10
 pydantic==2.10.6
 pydantic_core==2.27.2
 python-decouple==3.8
+python-hcl2==7.1.0
 redis==5.2.1
 requests==2.32.3
 sqlparse==0.5.3

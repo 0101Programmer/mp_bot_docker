@@ -2,22 +2,17 @@
 import { onMounted, ref } from 'vue';
 import { useUserStore } from '@/stores/userStore.ts';
 import { useRouter } from 'vue-router';
-import { useConfigStore } from '@/stores/configStore.ts'; // Импортируем хранилище конфигурации
+import { useConfigStore } from '@/stores/configStore.ts';
 
-// Инициализируем хранилище и роутер
 const userStore = useUserStore();
-const configStore = useConfigStore(); // Получаем доступ к хранилищу конфигурации
+const configStore = useConfigStore();
 const router = useRouter();
 
-// Состояние для загрузки данных
 const isLoading = ref(true);
 const appeals = ref([]);
+const isModalOpen = ref(false);
+const selectedAppealText = ref('');
 
-// Состояние для модального окна
-const isModalOpen = ref(false); // Открыто ли модальное окно
-const selectedAppealText = ref(''); // Текст выбранного обращения
-
-// Функция для преобразования статуса в русский текст
 const getStatusDisplay = (status: string) => {
   const statusMap = {
     'new': 'Новое',
@@ -27,7 +22,6 @@ const getStatusDisplay = (status: string) => {
   return statusMap[status] || status;
 };
 
-// Функция для подтверждения удаления
 const confirmDelete = (appealId: number) => {
   const isConfirmed = confirm(
     "Удаление обращения очистит всю его историю, а также отзовёт его, в случае, если оно не было обработано. Вы уверены?"
@@ -37,16 +31,13 @@ const confirmDelete = (appealId: number) => {
   }
 };
 
-// Функция для удаления обращения
 const deleteAppeal = async (appealId: number) => {
   try {
-    // Получаем user_id из хранилища
     const userId = userStore.userData?.id;
     if (!userId) {
       throw new Error('User ID не найден.');
     }
 
-    // Отправляем запрос на удаление с user_id
     const response = await fetch(`${configStore.backendBaseUrl}/api/v1/user/appeal/${appealId}/delete/?user_id=${userId}`, {
       method: 'DELETE',
       headers: {
@@ -58,7 +49,6 @@ const deleteAppeal = async (appealId: number) => {
       throw new Error('Ошибка при удалении обращения.');
     }
 
-    // Удаляем обращение из списка на фронтенде
     appeals.value = appeals.value.filter((appeal) => appeal.id !== appealId);
   } catch (error) {
     console.error('Ошибка:', error.message);
@@ -66,21 +56,68 @@ const deleteAppeal = async (appealId: number) => {
   }
 };
 
-// Функция для загрузки данных через API
-onMounted(async () => {
+// Метод для копирования текста (обновленный)
+const copyToClipboard = (text: string) => {
   try {
-    // Если токена нет, перенаправляем на страницу ошибки
-    if (!userStore.authToken) {
-      throw new Error('Токен отсутствует. Пожалуйста, авторизуйтесь.');
+    // Создаем временный textarea элемент
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    // Пытаемся использовать современный API
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        showCopySuccess();
+      }).catch(() => {
+        // Если современный API не сработал, используем старый способ
+        fallbackCopy(textarea);
+      });
+    } else {
+      // Используем старый способ, если Clipboard API недоступен
+      fallbackCopy(textarea);
     }
 
-    // Если данные пользователя отсутствуют, загружаем их
+    // Удаляем временный элемент
+    document.body.removeChild(textarea);
+  } catch (error) {
+    console.error('Ошибка при копировании текста:', error);
+    alert('Не удалось скопировать текст. Попробуйте выделить текст вручную и скопировать его.');
+  }
+};
+
+// Старый способ копирования
+const fallbackCopy = (textarea: HTMLTextAreaElement) => {
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      showCopySuccess();
+    } else {
+      throw new Error('Не удалось выполнить команду копирования');
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+
+// Показываем уведомление об успешном копировании
+const showCopySuccess = () => {
+  // Используем native Telegram WebApp API если доступен
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.showAlert('Текст скопирован в буфер обмена!');
+  } else {
+    alert('Текст скопирован в буфер обмена!');
+  }
+};
+
+onMounted(async () => {
+  try {
     if (!userStore.userData) {
       await userStore.loadUserData();
     }
 
-    // Загружаем список обращений
-    const userId = userStore.userData.id; // Получаем user_id из хранилища
+    const userId = userStore.userData.id;
     const response = await fetch(`${configStore.backendBaseUrl}/api/v1/user/appeals/?user_id=${userId}`, {
       method: 'GET',
       headers: {
@@ -98,22 +135,19 @@ onMounted(async () => {
     console.error('Ошибка:', error.message);
     await router.push(`/error?message=${encodeURIComponent(error.message)}`);
   } finally {
-    isLoading.value = false; // Завершаем загрузку
+    isLoading.value = false;
   }
 });
 
-// Функция для открытия модального окна
 const openModal = (text: string) => {
-  selectedAppealText.value = text; // Устанавливаем текст для модального окна
-  isModalOpen.value = true; // Открываем модальное окно
+  selectedAppealText.value = text;
+  isModalOpen.value = true;
 };
 
-// Функция для закрытия модального окна
 const closeModal = () => {
-  isModalOpen.value = false; // Закрываем модальное окно
+  isModalOpen.value = false;
 };
 
-// Функция для обрезания текста
 const truncateText = (text: string, maxLength: number = 50): string => {
   if (text.length > maxLength) {
     return text.slice(0, maxLength) + '...';
@@ -121,7 +155,6 @@ const truncateText = (text: string, maxLength: number = 50): string => {
   return text;
 };
 
-// Функция для форматирования даты
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
@@ -130,16 +163,6 @@ const formatDate = (dateString: string): string => {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${day}.${month}.${year} ${hours}:${minutes}`;
-};
-
-// Метод для копирования текста
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Текст скопирован в буфер обмена!');
-  }).catch((error) => {
-    console.error('Ошибка при копировании текста:', error);
-    alert('Не удалось скопировать текст.');
-  });
 };
 </script>
 

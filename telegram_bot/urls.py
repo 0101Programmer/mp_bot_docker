@@ -1,5 +1,6 @@
 from django.urls import path
 
+from telegram_bot import views
 from telegram_bot.api_views.admin.admin_requests.get_update_delete_admin_requests import AdminRequestListView, \
     UpdateAdminRequestStatusView, DeleteAdminRequestView
 from telegram_bot.api_views.admin.appeals.get_update_delete_appeal import AppealListForAdminView, \
@@ -12,8 +13,6 @@ from telegram_bot.api_views.admin.commissions.get_update_commission import Commi
 from telegram_bot.api_views.admin.users.delete_user import DeleteUserView
 from telegram_bot.api_views.service.file_downloader import DownloadFileView
 from telegram_bot.api_views.service.get_user_data import UserDataView
-from telegram_bot.api_views.service.logout_endpoint import LogoutView
-from telegram_bot.api_views.service.tg_frontend_redirect import redirect_to_frontend
 from telegram_bot.api_views.user.admin_requests.get_admin_requests import CheckPendingRejectedAcceptedRequest
 from telegram_bot.api_views.user.admin_requests.sent_admin_request import SentAdminRequest
 from telegram_bot.api_views.user.appeals.appeal_create import CreateAppealView
@@ -22,10 +21,7 @@ from telegram_bot.api_views.user.appeals.get_appeals import AppealListView
 
 urlpatterns = [
     # api для сервисного взаимодействия с пользователем
-    path('api/v1/service/get_user_data/<str:token>/', UserDataView.as_view(), name='user_data'),
-    path('api/v1/service/frontend_redirect_url/<str:token>/', redirect_to_frontend, name='redirect_to_frontend'),
-    path('api/v1/service/logout/', LogoutView.as_view(), name='logout'),
-
+    path('api/v1/service/get_user_data/', UserDataView.as_view(), name='user_data'),
 
     # api для сервисного взаимодействия с фронтендом
     path('api/v1/service/download/<int:appeal_id>/', DownloadFileView.as_view(), name='download_file'),
@@ -59,5 +55,4 @@ urlpatterns = [
     path('api/v1/admin/update_admin_request_status/<int:request_id>/', UpdateAdminRequestStatusView.as_view(),
          name='update-admin-request-status'),
     path('api/v1/admin/delete_admin_request/<int:request_id>/', DeleteAdminRequestView.as_view(), name='delete-admin-request'),
-
 ]

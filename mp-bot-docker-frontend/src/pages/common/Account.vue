@@ -73,11 +73,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore.ts';
-import { useRouter } from 'vue-router';
 
-// Инициализируем хранилище и роутер
+// Инициализируем хранилище
 const userStore = useUserStore();
-const router = useRouter();
 
 // Состояние для загрузки данных
 const isLoading = ref(true);
@@ -91,14 +89,6 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Ошибка:', error.message);
-
-    // Если ошибка связана с отсутствием токена
-    if (error.message.includes('Токен отсутствует') || error.message.includes('Unauthorized')) {
-      await router.push(`/login?message=${encodeURIComponent('Пожалуйста, авторизуйтесь.')}`);
-    } else {
-      // Для других ошибок перенаправляем на страницу ошибки
-      await router.push(`/error?message=${encodeURIComponent(error.message)}`);
-    }
   } finally {
     isLoading.value = false; // Завершаем загрузку
   }

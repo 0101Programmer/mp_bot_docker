@@ -1,69 +1,69 @@
 import { defineStore } from 'pinia';
+import axios from 'axios';
 import { useConfigStore } from './configStore';
-import axios, { AxiosError } from 'axios';
-
-interface UserData {
-  id: number;
-  telegram_id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  is_admin: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    userData: null as UserData | null,
-    authToken: localStorage.getItem('authToken') || null,
+    username: null as string | null,
+    telegramId: null as number | null,
+    isLoggedIn: false,
+    userData: null as any | null, // Данные пользователя из БД
   }),
   actions: {
-    setUserData(data: UserData) {
-      this.userData = data;
+    setUser(username: string, telegramId: number) {
+      this.username = username;
+      this.telegramId = telegramId;
+      this.isLoggedIn = true;
     },
-    setAuthToken(token: string) {
-      this.authToken = token;
-      localStorage.setItem('authToken', token);
-    },
-    clearUserData() {
-      // Очищаем состояние Pinia
-      this.userData = null;
-      this.authToken = null;
+    async loadUserDataFromBackend(telegramId: number) {
+      if (!telegramId) {
+        console.error('Telegram ID is not provided. Cannot load user data.');
+        return;
+      }
 
-      // Очищаем localStorage
-      localStorage.removeItem('authToken');
-    },
-    getApiUrl(endpoint: string): string {
       const configStore = useConfigStore();
-      return `${configStore.backendBaseUrl}/api/v1/service/${endpoint}`;
-    },
-    async loadUserData() {
-      if (!this.authToken) {
-        throw new Error('Токен отсутствует');
+      if (!configStore.backendBaseUrl) {
+        console.error('Backend base URL is not set. Cannot send request.');
+        return;
       }
 
       try {
-        const backendUrl = this.getApiUrl(`get_user_data/${this.authToken}/`);
+        console.log('Sending request to backend with telegramId:', telegramId);
+        console.log('Request payload:', { telegramId }); // Логируем тело запроса
 
-        const response = await axios.get(backendUrl, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await axios.post(
+          `${configStore.backendBaseUrl}/api/v1/service/get_user_data/`,
+          { telegramId },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
-        this.setUserData(response.data);
+        console.log('Response from backend:', response.data);
+        this.userData = response.data; // Сохраняем данные в userData
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          // Если токен недействителен, очищаем данные и выбрасываем ошибку
-          this.clearUserData();
-          throw new Error('Токен недействителен. Пожалуйста, авторизуйтесь заново.');
-        }
+        console.error('Failed to load user data from backend:', error);
 
-        console.error('Ошибка при загрузке данных пользователя:', error.message || 'Неизвестная ошибка');
-        this.clearUserData();
-        throw error;
+        if (error.response) {
+          console.error('Response data:', error.response.data); // Логируем ответ от сервера
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+        } else {
+          console.error('Error message:', error.message);
+        }
       }
+    },
+    async loadUserData() {
+      if (!this.telegramId) {
+        console.error('Telegram ID is not set. Cannot load user data.');
+        return;
+      }
+
+      await this.loadUserDataFromBackend(this.telegramId);
     },
   },
 });

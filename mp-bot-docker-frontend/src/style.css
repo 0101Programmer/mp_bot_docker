@@ -4,6 +4,7 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  font-size: clamp(8px, 1.25vw, 14px); /* Основной размер шрифта 8-14px */
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -30,10 +31,11 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  font-size: 1rem; /* Наследуем от :root с clamp */
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: clamp(1.5rem, 5vw, 3.2em); /* Адаптивный размер для заголовков */
   line-height: 1.1;
 }
 
@@ -41,7 +43,7 @@ button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 1em; /* Наследует адаптивный размер */
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
