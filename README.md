@@ -55,7 +55,7 @@
 4. **Уведомления:** отправка оповещений пользователям.  
 
 ---
-## **Подготовка к запуску проекта**  
+## **Подготовка к <u>локальному</u> запуску проекта**
 
 ### **Настройка окружения**
 
@@ -176,8 +176,9 @@ TELEGRAM_BOT_BACKEND_BASE_URL=http://127.0.0.1:8000/telegram_bot
 # -----------------------------------------------------------------------------
 # HTTPS хост для использования Telegram WebApp
 # -----------------------------------------------------------------------------
-TELEGRAM_WEBAPP_HOST=example-example-example-example.trycloudflare.com
-VITE_TELEGRAM_WEBAPP_HOST=example-example-example-example.trycloudflare.com
+TELEGRAM_WEBAPP_HOST=...
+VITE_TELEGRAM_WEBAPP_HOST=...
+TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
 ```
 
 Ещё один вариант, в качестве улучшения структуризации - создать пакет `.env_collection` в корне проекта (также перед запуском) и заполнить его `.env` файлами, которые будут содержать
@@ -215,12 +216,16 @@ VITE_TELEGRAM_WEBAPP_HOST=example-example-example-example.trycloudflare.com
 1. **Запуск без Docker:**
    - Установить `USE_DOCKER=0` в `.env`.
    - Запустить Redis (через bash, и если не запущен) `~$ sudo systemctl start redis`.
+   - Запустить cloudflared туннель для Telegram WebApp: `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`
+   - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python no_docker_start_project.py`.
 
 
 2. **Запуск с Docker + COMPOSE_BAKE:**
    - Установить `USE_DOCKER=1` в `.env`.
    - Запустить Docker Desktop.
+   - Запустить cloudflared туннель для Telegram WebApp: `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
+   - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python docker_start_project.py`.
 
 > Если требуется полная пересборка (down + bake + up), необходимо ввести в терминал `python docker_start_project.py -d`
@@ -377,8 +382,8 @@ VITE_TELEGRAM_WEBAPP_HOST=example-example-example-example.trycloudflare.com
 
 ## **Дальнейшие планы**
 
-> Планируется добавление новых функций, таких как отслеживание времени внесения изменений в той или иной таблице, 
-> разграничение прав для администраторов, 
-> улучшение интерфейса и расширение функциональности.
-
+> Планируется добавление нового функционала:
+> - разграничение прав для администраторов;
+> - обновление фронтенда под Telegram WebApp
+> - улучшение интерфейса.
 ---
