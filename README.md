@@ -216,7 +216,9 @@ TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
 1. **Запуск без Docker:**
    - Установить `USE_DOCKER=0` в `.env`.
    - Запустить Redis (через bash, и если не запущен) `~$ sudo systemctl start redis`.
-   - Запустить cloudflared туннель для Telegram WebApp: `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`
+   - Запустить cloudflared туннель для Telegram WebApp: 
+   
+   `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`
    - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python no_docker_start_project.py`.
 
@@ -224,7 +226,9 @@ TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
 2. **Запуск с Docker + COMPOSE_BAKE:**
    - Установить `USE_DOCKER=1` в `.env`.
    - Запустить Docker Desktop.
-   - Запустить cloudflared туннель для Telegram WebApp: `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
+   - Запустить cloudflared туннель для Telegram WebApp: 
+   
+   - `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
    - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python docker_start_project.py`.
 
