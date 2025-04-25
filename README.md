@@ -228,7 +228,7 @@ TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
    - Запустить Docker Desktop.
    - Запустить cloudflared туннель для Telegram WebApp: 
    
-   - `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
+   `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
    - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python docker_start_project.py`.
 
