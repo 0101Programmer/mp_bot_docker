@@ -182,9 +182,9 @@ TELEGRAM_BOT_BACKEND_BASE_URL=http://127.0.0.1:8000/telegram_bot
 # -----------------------------------------------------------------------------
 # HTTPS хост для использования Telegram WebApp
 # -----------------------------------------------------------------------------
-TELEGRAM_WEBAPP_HOST=...
-VITE_TELEGRAM_WEBAPP_HOST=...
-TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
+TELEGRAM_WEBAPP_HOST=passes-lbs-touched-nano.trycloudflare.com
+VITE_TELEGRAM_WEBAPP_HOST=passes-lbs-touched-nano.trycloudflare.com
+TELEGRAM_WEBAPP_HOST_FOR_CORS=https://passes-lbs-touched-nano.trycloudflare.com
 ```
 
 Ещё один вариант, в качестве улучшения структуризации - создать пакет `.env_collection` в корне проекта (также перед запуском) и заполнить его `.env` файлами, которые будут содержать
