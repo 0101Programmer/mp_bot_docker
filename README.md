@@ -1,4 +1,9 @@
-# **mp_bot_docker**  
+# **mp_bot_docker** 
+![Python](https://img.shields.io/badge/python-3.13-blue.svg)
+![Vue](https://img.shields.io/badge/vue-3.5.13-green.svg)
+![Django](https://img.shields.io/badge/django-latest-green.svg)
+![Docker](https://img.shields.io/badge/docker-28.0-blue.svg)
+
 Проект чат-бота Молодежного парламента  
 
 ## **Описание проекта**  
@@ -29,6 +34,7 @@
 - **Инфраструктура**:
   - Docker 28.0
   - Docker Compose v2.33 
+  - Cloudflare Tunnel
 
 ---
 
@@ -216,20 +222,12 @@ TELEGRAM_WEBAPP_HOST_FOR_CORS=https://...
 1. **Запуск без Docker:**
    - Установить `USE_DOCKER=0` в `.env`.
    - Запустить Redis (через bash, и если не запущен) `~$ sudo systemctl start redis`.
-   - Запустить cloudflared туннель для Telegram WebApp: 
-   
-   `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`
-   - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python no_docker_start_project.py`.
 
 
 2. **Запуск с Docker + COMPOSE_BAKE:**
    - Установить `USE_DOCKER=1` в `.env`.
    - Запустить Docker Desktop.
-   - Запустить cloudflared туннель для Telegram WebApp: 
-   
-   `PS C:\cloudflared> .\cloudflared.exe tunnel --url http://localhost:5173`.
-   - Прописать его адрес в .env (# HTTPS хост для использования Telegram WebApp).
    - Ввести в терминал: `python docker_start_project.py`.
 
 > Если требуется полная пересборка (down + bake + up), необходимо ввести в терминал `python docker_start_project.py -d`

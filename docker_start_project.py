@@ -37,11 +37,35 @@ def check_images_exist():
         return False
 
 
+def check_tunnel():
+    """
+    Проверяет создание Cloudflare Tunnel перед взаимодействием с Docker.
+    Аналогично проверке в не-докер скрипте.
+    """
+    try:
+        print("=== Проверка Cloudflare Tunnel ===")
+        tunnel_process = subprocess.Popen(
+            ["python", "scripts/start_cloudflared_tunnel.py"],
+            text=True,
+            encoding="utf-8"
+        )
+
+        # Ждем завершения скрипта (но сам туннель продолжит работать)
+        tunnel_process.wait()
+        if tunnel_process.returncode != 0:
+            print("Ошибка при запуске Cloudflare Tunnel")
+            return False
+        return True
+    except Exception as e:
+        print(f"Ошибка при проверке туннеля: {e}")
+        return False
+
+
 if __name__ == "__main__":
     # Парсинг аргументов командной строки
     parser = argparse.ArgumentParser(description='Запуск проекта в Docker')
     parser.add_argument('-d', '--down', action='store_true',
-                       help='Остановить и удалить контейнеры перед пересборкой')
+                        help='Остановить и удалить контейнеры перед пересборкой')
     args = parser.parse_args()
 
     # Загружаем значение USE_DOCKER из .env
@@ -53,6 +77,10 @@ if __name__ == "__main__":
         exit(1)
 
     try:
+        # Проверка туннеля перед любыми действиями с Docker
+        if not check_tunnel():
+            exit(1)
+
         # Если указан флаг -d, сначала останавливаем и удаляем контейнеры
         if args.down:
             run_command("docker compose down --rmi all", "Остановка контейнеров через docker compose down")

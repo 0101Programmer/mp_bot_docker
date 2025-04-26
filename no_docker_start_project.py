@@ -33,7 +33,6 @@ async def main():
         print("Запуск всех компонентов...")
 
         # 1. Запускаем Cloudflare Tunnel (неблокирующий вызов)
-        print("Запуск Cloudflare Tunnel...")
         tunnel_process = subprocess.Popen(
             ["python", "scripts/start_cloudflared_tunnel.py"],
             text=True,
